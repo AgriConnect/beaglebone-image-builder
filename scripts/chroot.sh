@@ -72,7 +72,8 @@ check_defines () {
 	case "${deb_distribution}" in
 	debian)
 		deb_components=${deb_components:-"main contrib non-free"}
-		deb_mirror=${deb_mirror:-"deb.debian.org/debian"}
+		# deb_mirror=${deb_mirror:-"deb.debian.org/debian"}
+		deb_mirror=${deb_mirror:-"debian.xtdv.net/debian/"}
 		;;
 	ubuntu)
 		deb_components=${deb_components:-"main universe multiverse"}
@@ -359,7 +360,7 @@ jessie|stretch)
 	echo "#deb-src http://deb.debian.org/debian-security ${deb_codename}/updates ${deb_components}" >> ${wfile}
 	echo "" >> ${wfile}
 	if [ "x${chroot_enable_debian_backports}" = "xenable" ] ; then
-		echo "deb http://deb.debian.org/debian ${deb_codename}-backports ${deb_components}" >> ${wfile}
+		echo "deb http://debian.xtdv.net/debian ${deb_codename}-backports ${deb_components}" >> ${wfile}
 		echo "#deb-src http://deb.debian.org/debian ${deb_codename}-backports ${deb_components}" >> ${wfile}
 	else
 		echo "#deb http://deb.debian.org/debian ${deb_codename}-backports ${deb_components}" >> ${wfile}
@@ -941,7 +942,8 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 				qemu_command="git clone ${rfs_opt_scripts} /opt/scripts/ --depth 1"
 				qemu_warning
 				git clone -v ${rfs_opt_scripts} /opt/scripts/ --depth 1
-				sync
+				echo "Log: Done git clone"
+				# sync
 				if [ -f /opt/scripts/.git/config ] ; then
 					echo "/opt/scripts/ : ${rfs_opt_scripts}" >> /opt/source/list.txt
 					chown -R ${rfs_username}:${rfs_username} /opt/scripts/

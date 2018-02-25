@@ -104,7 +104,8 @@ check_defines () {
 	if [ ! "${deb_mirror}" ] ; then
 		case "${deb_distribution}" in
 		debian)
-			deb_mirror="deb.debian.org/debian"
+			# deb_mirror="deb.debian.org/debian"
+			deb_mirror="debian.xtdv.net/debian/"
 			;;
 		ubuntu)
 			deb_mirror="ports.ubuntu.com/ubuntu-ports"
