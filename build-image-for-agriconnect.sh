@@ -15,4 +15,3 @@ generate_img() {
 ./RootStock-NG.sh -c agriconnect_console_debian_stretch_armhf.conf
 
 generate_img
-
