@@ -37,21 +37,21 @@ export USERNAME=${rfs_username}
 
 echo "env: [`env`]"
 
-is_this_qemu () {
+is_this_qemu() {
 	unset warn_qemu_will_fail
 	if [ -f /usr/bin/qemu-arm-static ] ; then
 		warn_qemu_will_fail=1
 	fi
 }
 
-qemu_warning () {
+qemu_warning() {
 	if [ "${warn_qemu_will_fail}" ] ; then
 		echo "Log: (chroot) Warning, qemu can fail here... (run on real armv7l hardware for production images)"
 		echo "Log: (chroot): [${qemu_command}]"
 	fi
 }
 
-git_clone () {
+git_clone() {
 	mkdir -p ${git_target_dir} || true
 	qemu_command="git clone ${git_repo} ${git_target_dir} --depth 1 || true"
 	qemu_warning
@@ -60,7 +60,7 @@ git_clone () {
 	echo "${git_target_dir} : ${git_repo}" >> /opt/source/list.txt
 }
 
-git_clone_branch () {
+git_clone_branch() {
 	mkdir -p ${git_target_dir} || true
 	qemu_command="git clone -b ${git_branch} ${git_repo} ${git_target_dir} --depth 1 || true"
 	qemu_warning
@@ -69,7 +69,7 @@ git_clone_branch () {
 	echo "${git_target_dir} : ${git_repo}" >> /opt/source/list.txt
 }
 
-git_clone_full () {
+git_clone_full() {
 	mkdir -p ${git_target_dir} || true
 	qemu_command="git clone ${git_repo} ${git_target_dir} || true"
 	qemu_warning
@@ -78,13 +78,13 @@ git_clone_full () {
 	echo "${git_target_dir} : ${git_repo}" >> /opt/source/list.txt
 }
 
-setup_system () {
+setup_system() {
 	echo "" >> /etc/securetty
 	echo "#USB Gadget Serial Port" >> /etc/securetty
 	echo "ttyGS0" >> /etc/securetty
 }
 
-install_git_repos () {
+install_git_repos() {
 	git_repo="https://github.com/strahlex/BBIOConfig.git"
 	git_target_dir="/opt/source/BBIOConfig"
 	git_clone
@@ -109,18 +109,38 @@ install_git_repos () {
 	git_clone
 }
 
-
-add_pip_repo () {
+add_pip_repo() {
 	pip_folder=/home/${rfs_username}/.pip
 	mkdir ${pip_folder}
 	echo -e "[global]\nextra-index-url=https://packagecloud.io/quan/python3-arm/pypi/simple" > ${pip_folder}/pip.conf
 	chown debian: -R ${pip_folder}
 }
 
+install_pip() {
+	if [ -f /usr/bin/python3.6 ] ; then
+		wget https://bootstrap.pypa.io/get-pip.py || true
+		if [ -f get-pip.py ] ; then
+			python3.6 get-pip.py
+			rm -f get-pip.py || true
+			rm -rf /root/.cache/pip
+		fi
+	fi
+}
+
+add_apt_repo() {
+	wget -qO- https://repos.influxdata.com/influxdb.key | apt-key add -
+	echo "deb https://repos.influxdata.com/debian stretch stable" > /etc/apt/sources.list.d/influxdata.list
+}
+
+change_apt_mirror() {
+	# Note: The pattern has whitespace, so that we don't replace the "security" repo
+	sed -i "s/deb.debian.org\/debian /opensource.xtdv.net/debian /g" /etc/apt/sources.list
+}
+
 passwordless_sudo () {
 	if [ -d /etc/sudoers.d/ ] ; then
 		#Don't require password for sudo access
-		echo "${rfs_username} ALL=NOPASSWD: ALL" >/etc/sudoers.d/${rfs_username}
+		echo "${rfs_username} ALL=(ALL:ALL) NOPASSWD:ALL" >/etc/sudoers.d/${rfs_username}
 		chmod 0440 /etc/sudoers.d/${rfs_username}
 	fi
 }
@@ -128,6 +148,10 @@ passwordless_sudo () {
 is_this_qemu
 setup_system
 add_pip_repo
+install_pip
+add_apt_repo
+change_apt_mirror
+
 if [ -f /usr/bin/git ] ; then
 	git config --global user.email "${rfs_username}@agriconnect.vn"
 	git config --global user.name "${rfs_username}"
@@ -135,4 +159,5 @@ if [ -f /usr/bin/git ] ; then
 	git config --global --unset-all user.email
 	git config --global --unset-all user.name
 fi
+
 passwordless_sudo
