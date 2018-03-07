@@ -134,7 +134,7 @@ add_apt_repo() {
 
 change_apt_mirror() {
 	# Note: The pattern has whitespace, so that we don't replace the "security" repo
-	sed -i "s/deb.debian.org\/debian /opensource.xtdv.net/debian /g" /etc/apt/sources.list
+	sed -i "s:deb.debian.org/debian :opensource.xtdv.net/debian :g" /etc/apt/sources.list
 }
 
 passwordless_sudo () {
