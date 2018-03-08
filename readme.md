@@ -1,3 +1,30 @@
+## Introduction
+
+This branch contains script to build BeagleBone Black firmware, used in [AgriConnect](https://agriconnect.vn), an agritech startup from Viet Nam.
+
+The OS is Debian 9.3. The firmware includes:
+
+- Python 3.6 & pip (including our [APT repo](https://packagecloud.io/quan/beaglebone-stretch))
+- [Repository for InfluxDB](https://repos.influxdata.com).
+- [Our repo](https://packagecloud.io/quan/python3-arm) for Python 3 packages, containing pre-built wheel files.
+- Use [Viet Nam mirror](http://opensource.xtdv.net/debian/) for APT repo.
+- Some _dev_ packages are pre-installed, to help install Python packages later.
+
+What are excluded:
+
+- Wifi-related packages.
+
+## How to build
+
+Run `./build-image-for-agriconnect.sh`. It will produce _\*.img.xz_ and _\*.bmap_ files in _deploy/_ folder.
+
+## How I can find hardware to run this build script
+
+You can rent bare-metal ARM server from [Scaleway](http://scaleway.com/).
+
+# Original README
+
+
 eeprom database
 ------------
 
