@@ -117,7 +117,7 @@ add_pip_repo() {
 	pip_folder=/home/${rfs_username}/.pip
 	mkdir ${pip_folder} || true
 	if [ -d ${pip_folder} ] ; then
-		echo -e "[global]\nextra-index-url=https://packagecloud.io/quan/python3-arm/pypi/simple" > ${pip_folder}/pip.conf
+		echo -e "[global]\nextra-index-url=https://repo.fury.io/agriconnect/" > ${pip_folder}/pip.conf
 		chown debian: -R ${pip_folder}
 	fi
 }
@@ -174,6 +174,8 @@ enable_redis_socket() {
 add_apt_repo() {
 	wget -qO- https://repos.influxdata.com/influxdb.key | apt-key add -
 	echo "deb https://repos.influxdata.com/debian stretch stable" > /etc/apt/sources.list.d/influxdata.list
+	# For Python3.6
+	echo "deb [trusted=yes] https://repo.fury.io/agriconnect/ /" > /etc/apt/sources.list.d/fury.list
 }
 
 change_apt_mirror() {
