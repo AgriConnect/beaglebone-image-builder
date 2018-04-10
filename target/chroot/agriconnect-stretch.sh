@@ -22,6 +22,9 @@
 
 export LC_ALL=en_US.UTF-8
 
+u_boot_release="v2018.03"
+u_boot_release_x15="ti-2017.01"
+
 #contains: rfs_username, release_date
 if [ -f /etc/rcn-ee.conf ] ; then
 	. /etc/rcn-ee.conf
@@ -79,6 +82,15 @@ git_clone_full() {
 }
 
 setup_system() {
+	#For when sed/grep/etc just gets way to complex...
+	cd /
+	if [ -f /opt/scripts/mods/debian-add-sbin-usr-sbin-to-default-path.diff ] ; then
+		if [ -f /usr/bin/patch ] ; then
+			echo "Patching: /etc/profile"
+			patch -p1 < /opt/scripts/mods/debian-add-sbin-usr-sbin-to-default-path.diff
+		fi
+	fi
+
 	echo "" >> /etc/securetty
 	echo "#USB Gadget Serial Port" >> /etc/securetty
 	echo "ttyGS0" >> /etc/securetty
@@ -111,6 +123,22 @@ install_git_repos() {
 	git_repo="https://github.com/beagleboard/bb.org-overlays"
 	git_target_dir="/opt/source/bb.org-overlays"
 	git_clone
+	if [ -f ${git_target_dir}/.git/config ] ; then
+		cd ${git_target_dir}/
+		if [ ! "x${repo_rcnee_pkg_version}" = "x" ] ; then
+			is_kernel=$(echo ${repo_rcnee_pkg_version} | grep 3.8.13 || true)
+			if [ "x${is_kernel}" = "x" ] ; then
+				if [ -f /usr/bin/make ] ; then
+					if [ ! -f /lib/firmware/BB-ADC-00A0.dtbo ] ; then
+						make
+						make install
+						make clean
+					fi
+					update-initramfs -u -k ${repo_rcnee_pkg_version}
+				fi
+			fi
+		fi
+	fi
 }
 
 add_pip_repo() {
@@ -183,6 +211,22 @@ change_apt_mirror() {
 	sed -i "s:deb.debian.org/debian :opensource.xtdv.net/debian :g" /etc/apt/sources.list
 }
 
+other_source_links () {
+	rcn_https="https://rcn-ee.com/repos/git/u-boot-patches"
+
+	mkdir -p /opt/source/u-boot_${u_boot_release}/
+	wget --directory-prefix="/opt/source/u-boot_${u_boot_release}/" ${rcn_https}/${u_boot_release}/0001-omap3_beagle-uEnv.txt-bootz-n-fixes.patch
+	wget --directory-prefix="/opt/source/u-boot_${u_boot_release}/" ${rcn_https}/${u_boot_release}/0001-am335x_evm-uEnv.txt-bootz-n-fixes.patch
+	wget --directory-prefix="/opt/source/u-boot_${u_boot_release}/" ${rcn_https}/${u_boot_release}/0002-U-Boot-BeagleBone-Cape-Manager.patch
+	mkdir -p /opt/source/u-boot_${u_boot_release_x15}/
+	wget --directory-prefix="/opt/source/u-boot_${u_boot_release_x15}/" ${rcn_https}/${u_boot_release_x15}/0001-beagle_x15-uEnv.txt-bootz-n-fixes.patch
+
+	echo "u-boot_${u_boot_release} : /opt/source/u-boot_${u_boot_release}" >> /opt/source/list.txt
+	echo "u-boot_${u_boot_release_x15} : /opt/source/u-boot_${u_boot_release_x15}" >> /opt/source/list.txt
+
+	chown -R ${rfs_username}:${rfs_username} /opt/source/
+}
+
 passwordless_sudo () {
 	if [ -d /etc/sudoers.d/ ] ; then
 		# Don't require password for sudo access
@@ -209,4 +253,5 @@ if [ -f /usr/bin/git ] ; then
 	git config --global --unset-all user.name
 fi
 
+other_source_links
 passwordless_sudo
