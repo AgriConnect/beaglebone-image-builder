@@ -347,6 +347,9 @@ generate_soc () {
 	echo "dtb=${dtb}" >> ${wfile}
 	echo "serial_tty=${SERIAL}" >> ${wfile}
 	echo "usbnet_mem=${usbnet_mem}" >> ${wfile}
+	echo "" >> ${wfile}
+	echo "#Advanced options" >> ${wfile}
+	echo "#disable_ssh_regeneration=true" >> ${wfile}
 
 	echo "" >> ${wfile}
 }
@@ -1269,7 +1272,7 @@ populate_rootfs () {
 			echo "#disable_uboot_overlay_video=1" >> ${wfile}
 			echo "#disable_uboot_overlay_audio=1" >> ${wfile}
 			echo "#disable_uboot_overlay_wireless=1" >> ${wfile}
-			echo "disable_uboot_overlay_adc=1" >> ${wfile}
+			echo "#disable_uboot_overlay_adc=1" >> ${wfile}
 			echo "###" >> ${wfile}
 			echo "###PRUSS OPTIONS" >> ${wfile}
 			unset use_pru_uio
