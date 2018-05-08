@@ -22,9 +22,6 @@
 
 export LC_ALL=en_US.UTF-8
 
-u_boot_release="v2018.03"
-u_boot_release_x15="ti-2017.01"
-
 #contains: rfs_username, release_date
 if [ -f /etc/rcn-ee.conf ] ; then
 	. /etc/rcn-ee.conf
@@ -123,22 +120,6 @@ install_git_repos() {
 	git_repo="https://github.com/beagleboard/bb.org-overlays"
 	git_target_dir="/opt/source/bb.org-overlays"
 	git_clone
-	if [ -f ${git_target_dir}/.git/config ] ; then
-		cd ${git_target_dir}/
-		if [ ! "x${repo_rcnee_pkg_version}" = "x" ] ; then
-			is_kernel=$(echo ${repo_rcnee_pkg_version} | grep 3.8.13 || true)
-			if [ "x${is_kernel}" = "x" ] ; then
-				if [ -f /usr/bin/make ] ; then
-					if [ ! -f /lib/firmware/BB-ADC-00A0.dtbo ] ; then
-						make
-						make install
-						make clean
-					fi
-					update-initramfs -u -k ${repo_rcnee_pkg_version}
-				fi
-			fi
-		fi
-	fi
 }
 
 add_pip_repo() {
