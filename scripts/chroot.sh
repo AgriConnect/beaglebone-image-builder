@@ -1,6 +1,6 @@
 #!/bin/bash -ex
 #
-# Copyright (c) 2012-2017 Robert Nelson <robertcnelson@gmail.com>
+# Copyright (c) 2012-2018 Robert Nelson <robertcnelson@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -965,6 +965,10 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 			sed -i -e 's:#SystemMaxUse=:SystemMaxUse=8M:g' /etc/systemd/systemd-journald.conf
 		fi
 
+		if [ -f /etc/systemd/journald.conf ] ; then
+			sed -i -e 's:#SystemMaxUse=:SystemMaxUse=8M:g' /etc/systemd/journald.conf
+		fi
+
 		#systemd v215: systemd-timesyncd.service replaces ntpdate
 		#enabled by default in v216 (not in jessie)
 		if [ -f /lib/systemd/system/systemd-timesyncd.service ] ; then
@@ -973,7 +977,9 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 
 			#set our own initial date stamp, otherwise we get July 2014
 			touch /var/lib/systemd/clock
-			chown systemd-timesync:systemd-timesync /var/lib/systemd/clock || true
+
+			#if systemd-timesync user exits, use that instead. (this user was removed in later systemd's)
+			cat /etc/group | grep ^systemd-timesync && chown systemd-timesync:systemd-timesync /var/lib/systemd/clock || true
 
 			#Remove ntpdate
 			if [ -f /usr/sbin/ntpdate ] ; then
@@ -1004,6 +1010,16 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 		#No guarntee we will have an active network connection...
 		if [ -f /lib/systemd/system/apt-daily.service ] ; then
 			systemctl disable apt-daily.service || true
+		fi
+
+		#We use connman...
+		if [ -f /lib/systemd/system/systemd-networkd.service ] ; then
+			systemctl disable systemd-networkd.service || true
+		fi
+
+		#We use connman...
+		if [ -f /lib/systemd/system/systemd-resolved.service ] ; then
+			systemctl disable systemd-resolved.service || true
 		fi
 	}
 
