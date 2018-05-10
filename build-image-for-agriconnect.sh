@@ -48,6 +48,6 @@ check_tools
 
 sudo echo "Start sudo session"
 
-./RootStock-NG.sh -c agriconnect_console_debian_stretch_armhf.conf
+./RootStock-NG.sh -c agriconnect_console_debian_stretch_armhf
 
 generate_img
