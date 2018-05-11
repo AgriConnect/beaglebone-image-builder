@@ -165,13 +165,6 @@ setup_gateway_tool() {
 		cp ${SRC_DIR}/database-backup/ph-backup-db.timer /lib/systemd/system/ || true
 		rm -rf ${SRC_DIR}
 	fi
-	# Install influxdb-csv-cleaner
-	FILENAME=influxdb-csv-cleaner
-	URL_API=https://api.github.com/repos/AgriConnect/influxdb-csv-cleaner/releases/latest
-	wget -qO- ${URL_API} | grep browser_download_url | grep 'armv7.*xz' | cut -d '"' -f 4 | wget -qi- -O- | unxz > ${influxdb-csv-cleaner}
-	if [ -f ${FILENAME} ] ; then
-		mv ${FILENAME} /usr/local/bin/
-	fi
 }
 
 enable_redis_socket() {
