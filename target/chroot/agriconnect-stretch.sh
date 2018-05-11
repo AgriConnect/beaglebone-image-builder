@@ -149,8 +149,8 @@ setup_gateway_config() {
 		cp ${SRC_DIR}/bin/enable-gpio.sh /bin/ || true
 		cp ${SRC_DIR}/etc/udev/rules.d/90-beaglebone-uart1.rules /etc/udev/rules.d/ || true
 		cp ${SRC_DIR}/lib/systemd/system/beaglebone-gpio.service /lib/systemd/system/ || true
-		cp ${SRC_DIR}/lib/systemd/system/ddns-update-duckdns.service /lib/systemd/system/ || true
-		cp ${SRC_DIR}/lib/systemd/system/ddns-update-duckdns.timer /lib/systemd/system/ || true
+		cp ${SRC_DIR}/lib/systemd/system/ddns-update-cloudns.service /lib/systemd/system/ || true
+		cp ${SRC_DIR}/lib/systemd/system/ddns-update-cloudns.timer /lib/systemd/system/ || true
 		rm -rf ${SRC_DIR}
 	fi
 }
