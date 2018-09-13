@@ -22,7 +22,7 @@
 
 export LC_ALL=C
 
-u_boot_release="v2018.03"
+u_boot_release="v2018.09"
 u_boot_release_x15="ti-2017.01"
 
 #contains: rfs_username, release_date
@@ -152,32 +152,24 @@ setup_desktop () {
 	chown -R ${rfs_username}:${rfs_username} ${wfile}
 }
 
-install_pip_pkgs () {
-	if [ -f /usr/bin/python ] ; then
-		wget https://bootstrap.pypa.io/get-pip.py || true
-		if [ -f get-pip.py ] ; then
-			python get-pip.py
-			rm -f get-pip.py || true
-
-			if [ -f /usr/local/bin/pip ] ; then
-				if [ -f /usr/bin/make ] ; then
-					echo "Installing pip packages"
-					git_repo="https://github.com/adafruit/adafruit-beaglebone-io-python.git"
-					git_target_dir="/opt/source/adafruit-beaglebone-io-python"
-					git_clone
-					if [ -f ${git_target_dir}/.git/config ] ; then
-						cd ${git_target_dir}/
-						sed -i -e 's:4.1.0:3.4.0:g' setup.py
-						python setup.py install
-					fi
-					pip install iw_parse
-				fi
+install_git_repos () {
+	if [ -f /usr/bin/make ] ; then
+		echo "Installing pip packages"
+		git_repo="https://github.com/adafruit/adafruit-beaglebone-io-python.git"
+		git_target_dir="/opt/source/adafruit-beaglebone-io-python"
+		git_clone
+		if [ -f ${git_target_dir}/.git/config ] ; then
+			cd ${git_target_dir}/
+			sed -i -e 's:4.1.0:3.4.0:g' setup.py
+			if [ -f /usr/bin/python2 ] ; then
+				python2 setup.py install || true
+			fi
+			if [ -f /usr/bin/python3 ] ; then
+				python3 setup.py install || true
 			fi
 		fi
 	fi
-}
 
-install_git_repos () {
 	if [ -d /usr/local/lib/node_modules/bonescript ] ; then
 		if [ -d /etc/apache2/ ] ; then
 			#bone101 takes over port 80, so shove apache/etc to 8080:
@@ -238,11 +230,6 @@ install_git_repos () {
 	fi
 
 	git_repo="https://github.com/RobertCNelson/dtb-rebuilder.git"
-	git_target_dir="/opt/source/dtb-4.9-ti"
-	git_branch="4.9-ti"
-	git_clone_branch
-
-	git_repo="https://github.com/RobertCNelson/dtb-rebuilder.git"
 	git_target_dir="/opt/source/dtb-4.14-ti"
 	git_branch="4.14-ti"
 	git_clone_branch
@@ -250,37 +237,9 @@ install_git_repos () {
 	git_repo="https://github.com/beagleboard/bb.org-overlays"
 	git_target_dir="/opt/source/bb.org-overlays"
 	git_clone
-	if [ -f ${git_target_dir}/.git/config ] ; then
-		cd ${git_target_dir}/
-		if [ ! "x${repo_rcnee_pkg_version}" = "x" ] ; then
-			is_kernel=$(echo ${repo_rcnee_pkg_version} | grep 3.8.13 || true)
-			if [ "x${is_kernel}" = "x" ] ; then
-				if [ -f /usr/bin/make ] ; then
-					if [ ! -f /lib/firmware/BB-ADC-00A0.dtbo ] ; then
-						make
-						make install
-						make clean
-					fi
-					update-initramfs -u -k ${repo_rcnee_pkg_version}
-				fi
-			fi
-		fi
-	fi
 
-	git_repo="https://github.com/ungureanuvladvictor/BBBlfs"
-	git_target_dir="/opt/source/BBBlfs"
-	git_clone
-	if [ -f ${git_target_dir}/.git/config ] ; then
-		cd ${git_target_dir}/
-		if [ -f /usr/bin/make ] ; then
-			./autogen.sh
-			./configure
-			make
-		fi
-	fi
-
-	git_repo="https://github.com/StrawsonDesign/Robotics_Cape_Installer"
-	git_target_dir="/opt/source/Robotics_Cape_Installer"
+	git_repo="https://github.com/StrawsonDesign/librobotcontrol"
+	git_target_dir="/opt/source/librobotcontrol"
 	git_clone
 
 	git_repo="https://github.com/mcdeoliveira/rcpy"
@@ -288,7 +247,7 @@ install_git_repos () {
 	git_clone
 	if [ -f ${git_target_dir}/.git/config ] ; then
 		cd ${git_target_dir}/
-		if [ -f /usr/bin/python3 ] && [ -f /usr/bin/easy_install ] ; then
+		if [ -f /usr/bin/python3 ] ; then
 			/usr/bin/python3 setup.py install
 		fi
 	fi
@@ -298,7 +257,7 @@ install_git_repos () {
 	git_clone
 	if [ -f ${git_target_dir}/.git/config ] ; then
 		cd ${git_target_dir}/
-		if [ -f /usr/bin/python3 ] && [ -f /usr/bin/easy_install ] ; then
+		if [ -f /usr/bin/python3 ] ; then
 			/usr/bin/python3 setup.py install
 		fi
 	fi
@@ -311,18 +270,27 @@ install_git_repos () {
 	git_repo="https://github.com/jadonk/beagle-tester"
 	git_target_dir="/opt/source/beagle-tester"
 	git_clone
-#	if [ -f ${git_target_dir}/.git/config ] ; then
-#		if [ -f /usr/lib/libroboticscape.so ] ; then
-#			cd ${git_target_dir}/
-#			if [ -f /usr/bin/make ] ; then
-#				make
-#				make install || true
-##				if [ ! "x${image_type}" = "xtester-2gb" ] ; then
-##					systemctl disable beagle-tester.service || true
-##				fi
-#			fi
-#		fi
-#	fi
+	if [ -f ${git_target_dir}/.git/config ] ; then
+		if [ -f /usr/lib/libroboticscape.so ] ; then
+			cd ${git_target_dir}/
+			if [ -f /usr/bin/make ] ; then
+				make
+				make install || true
+#				if [ ! "x${image_type}" = "xtester-2gb" ] ; then
+#					systemctl disable beagle-tester.service || true
+#				fi
+			fi
+		fi
+	fi
+}
+
+install_go_pkgs () {
+	if [ -f /usr/bin/go ] ; then
+		echo "go env: [`go env`]"
+		echo "go get -d -u gobot.io/x/gobot/..."
+		go get -d -u gobot.io/x/gobot/...
+		chown -R ${rfs_username}:${rfs_username} /home/${rfs_username}/go/
+	fi
 }
 
 other_source_links () {
@@ -334,6 +302,7 @@ other_source_links () {
 	wget --directory-prefix="/opt/source/u-boot_${u_boot_release}/" ${rcn_https}/${u_boot_release}/0002-U-Boot-BeagleBone-Cape-Manager.patch
 	mkdir -p /opt/source/u-boot_${u_boot_release_x15}/
 	wget --directory-prefix="/opt/source/u-boot_${u_boot_release_x15}/" ${rcn_https}/${u_boot_release_x15}/0001-beagle_x15-uEnv.txt-bootz-n-fixes.patch
+	rm /home/${rfs_username}/.wget-hsts || true
 
 	echo "u-boot_${u_boot_release} : /opt/source/u-boot_${u_boot_release}" >> /opt/source/list.txt
 	echo "u-boot_${u_boot_release_x15} : /opt/source/u-boot_${u_boot_release_x15}" >> /opt/source/list.txt
@@ -346,13 +315,14 @@ is_this_qemu
 setup_system
 setup_desktop
 
-install_pip_pkgs
 if [ -f /usr/bin/git ] ; then
 	git config --global user.email "${rfs_username}@example.com"
 	git config --global user.name "${rfs_username}"
 	install_git_repos
+	install_go_pkgs
 	git config --global --unset-all user.email
 	git config --global --unset-all user.name
+	chown ${rfs_username}:${rfs_username} /home/${rfs_username}/.gitconfig
 fi
 other_source_links
 #

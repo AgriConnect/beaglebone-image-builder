@@ -41,31 +41,33 @@ else
 	mkdir -p ${DIR}/deploy/ || true
 fi
 
-    debian_jessie_machinekit="debian-8.10-machinekit-armhf-${time}"
+    debian_jessie_machinekit="debian-8.11-machinekit-armhf-${time}"
 
-       debian_jessie_console="debian-8.10-console-armhf-${time}"
-           debian_jessie_iot="debian-8.10-iot-armhf-${time}"
-      debian_jessie_lxqt_2gb="debian-8.10-lxqt-2gb-armhf-${time}"
-      debian_jessie_lxqt_4gb="debian-8.10-lxqt-4gb-armhf-${time}"
-   debian_jessie_lxqt_xm_4gb="debian-8.10-lxqt-xm-4gb-armhf-${time}"
-    debian_jessie_oemflasher="debian-8.10-oemflasher-armhf-${time}"
+       debian_jessie_console="debian-8.11-console-armhf-${time}"
+           debian_jessie_iot="debian-8.11-iot-armhf-${time}"
+      debian_jessie_lxqt_2gb="debian-8.11-lxqt-2gb-armhf-${time}"
+      debian_jessie_lxqt_4gb="debian-8.11-lxqt-4gb-armhf-${time}"
+   debian_jessie_lxqt_xm_4gb="debian-8.11-lxqt-xm-4gb-armhf-${time}"
+    debian_jessie_oemflasher="debian-8.11-oemflasher-armhf-${time}"
 
-     debian_jessie_seeed_iot="debian-8.10-seeed-iot-armhf-${time}"
-debian_jessie_seeed_lxqt_4gb="debian-8.10-seeed-lxqt-4gb-armhf-${time}"
+     debian_jessie_seeed_iot="debian-8.11-seeed-iot-armhf-${time}"
+debian_jessie_seeed_lxqt_4gb="debian-8.11-seeed-lxqt-4gb-armhf-${time}"
 
-   debian_stretch_machinekit="debian-9.4-machinekit-armhf-${time}"
-      debian_stretch_console="debian-9.4-console-armhf-${time}"
-          debian_stretch_iot="debian-9.4-iot-armhf-${time}"
-     debian_stretch_lxqt_2gb="debian-9.4-lxqt-2gb-armhf-${time}"
-         debian_stretch_lxqt="debian-9.4-lxqt-armhf-${time}"
-      debian_stretch_lxqt_xm="debian-9.4-lxqt-xm-armhf-${time}"
-      debian_stretch_wayland="debian-9.4-wayland-armhf-${time}"
-   debian_stretch_oemflasher="debian-9.4-oemflasher-armhf-${time}"
+   debian_stretch_machinekit="debian-9.5-machinekit-armhf-${time}"
+      debian_stretch_console="debian-9.5-console-armhf-${time}"
+          debian_stretch_iot="debian-9.5-iot-armhf-${time}"
+     debian_stretch_lxqt_2gb="debian-9.5-lxqt-2gb-armhf-${time}"
+         debian_stretch_lxqt="debian-9.5-lxqt-armhf-${time}"
+      debian_stretch_lxqt_xm="debian-9.5-lxqt-xm-armhf-${time}"
+      debian_stretch_wayland="debian-9.5-wayland-armhf-${time}"
+   debian_stretch_oemflasher="debian-9.5-oemflasher-armhf-${time}"
 
+          debian_buster_tiny="debian-buster-tiny-armhf-${time}"
            debian_buster_iot="debian-buster-iot-armhf-${time}"
+     debian_buster_gobot_iot="debian-buster-gobot-iot-armhf-${time}"
        debian_buster_efi_iot="debian-buster-efi-iot-armhf-${time}"
 
-       ubuntu_bionic_ros_iot="debian-18.04-ros-iot-armhf-${time}"
+       ubuntu_bionic_ros_iot="ubuntu-18.04.1-ros-iot-armhf-${time}"
 
 xz_img="xz -z -8"
 #xz_tar="xz -z -8"
@@ -292,15 +294,22 @@ options="--img-4gb BBB-blank-\${base_rootfs} ${beaglebone} ${pru_rproc_v414ti} -
 #options="--img-4gb bone-\${base_rootfs}      ${beaglebone} ${pru_rproc_v414ti} --rootfs btrfs"                ; generate_img
 #options="--img-4gb BBB-blank-\${base_rootfs} ${beaglebone} ${pru_rproc_v414ti} --rootfs btrfs --emmc-flasher" ; generate_img
 
+###gobot iot image (buster):
+base_rootfs="${debian_buster_gobot_iot}" ; blend="buster-gobot-iot" ; extract_base_rootfs
+
+options="--img-4gb bbx15-\${base_rootfs}     ${beagle_x15}"                     ; generate_img
+options="--img-4gb bone-\${base_rootfs}      ${beaglebone} ${pru_rproc_v414ti}" ; generate_img
+
 ###efi iot image (buster):
 base_rootfs="${debian_buster_efi_iot}" ; blend="buster-efi-iot" ; extract_base_rootfs
 
 options="--img-4gb bone-\${base_rootfs}      ${beaglebone} ${pru_rproc_v414ti} --efi"                ; generate_img
 
-###ros iot image (buster):
+###ros iot image (bionic):
 base_rootfs="${ubuntu_bionic_ros_iot}" ; blend="bionic-ros-iot" ; extract_base_rootfs
 
-options="--img-4gb bone-\${base_rootfs}      ${beaglebone} ${pru_rproc_v414ti}"                ; generate_img
+options="--img-6gb bone-\${base_rootfs}      ${beaglebone} ${pru_rproc_v414ti}"  ; generate_img
+options="--img-6gb bbx15-\${base_rootfs}     ${beagle_x15}"                      ; generate_img
 
 ###archive *.tar
 base_rootfs="${debian_jessie_machinekit}"     ; blend="machinekit"      ; archive_base_rootfs
@@ -322,8 +331,10 @@ base_rootfs="${debian_stretch_lxqt_xm}"       ; blend="stretch-lxqt-xm"    ; arc
 base_rootfs="${debian_stretch_wayland}"       ; blend="stretch-wayland"    ; archive_base_rootfs
 base_rootfs="${debian_stretch_oemflasher}"    ; blend="stretch-oemflasher" ; archive_base_rootfs
 
-base_rootfs="${debian_buster_iot}"            ; blend="buster-iot"      ; archive_base_rootfs
-base_rootfs="${debian_buster_efi_iot}"        ; blend="buster-efi-iot"  ; archive_base_rootfs
+base_rootfs="${debian_buster_tiny}"           ; blend="buster-tiny"      ; archive_base_rootfs
+base_rootfs="${debian_buster_iot}"            ; blend="buster-iot"       ; archive_base_rootfs
+base_rootfs="${debian_buster_gobot_iot}"      ; blend="buster-gobot-iot" ; archive_base_rootfs
+base_rootfs="${debian_buster_efi_iot}"        ; blend="buster-efi-iot"   ; archive_base_rootfs
 
 base_rootfs="${ubuntu_bionic_ros_iot}"        ; blend="bionic-ros-iot"  ; archive_base_rootfs
 
@@ -438,10 +449,17 @@ base_rootfs="${debian_buster_efi_iot}" ; blend="buster-efi-iot"
 
 wfile="bone-\${base_rootfs}-4gb"           ; archive_img
 
-###ros iot image (buster):
+###gobot iot image (buster):
+base_rootfs="${debian_buster_gobot_iot}" ; blend="buster-gobot-iot"
+
+wfile="bbx15-\${base_rootfs}-4gb"          ; archive_img
+wfile="bone-\${base_rootfs}-4gb"           ; archive_img
+
+###ros iot image (bionic):
 base_rootfs="${ubuntu_bionic_ros_iot}" ; blend="bionic-ros-iot"
 
-wfile="bone-\${base_rootfs}-4gb"           ; archive_img
+wfile="bone-\${base_rootfs}-6gb"           ; archive_img
+wfile="bbx15-\${base_rootfs}-6gb"          ; archive_img
 
 __EOF__
 

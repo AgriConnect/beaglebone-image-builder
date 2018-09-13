@@ -79,7 +79,7 @@ check_defines () {
 		;;
 	ubuntu)
 		deb_components=${deb_components:-"main universe multiverse"}
-		deb_mirror=${deb_mirror:-"ports.ubuntu.com/ubuntu-ports"}
+		deb_mirror=${deb_mirror:-"ports.ubuntu.com/"}
 		;;
 	esac
 
@@ -306,24 +306,36 @@ sudo mv /tmp/01_noflash_kernel "${tempdir}/etc/dpkg/dpkg.cfg.d/01_noflash_kernel
 sudo mkdir -p "${tempdir}/usr/share/flash-kernel/db/" || true
 sudo cp -v "${OIB_DIR}/target/other/rcn-ee.db" "${tempdir}/usr/share/flash-kernel/db/"
 
+#generic apt.conf tweaks for flash/mmc devices to save on wasted space...
+sudo mkdir -p "${tempdir}/etc/apt/apt.conf.d/" || true
+
+#apt: emulate apt-get clean:
+echo '#Custom apt-get clean' > /tmp/02apt-get-clean
+echo 'DPkg::Post-Invoke { "rm -f /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb || true"; };' >> /tmp/02apt-get-clean
+echo 'APT::Update::Post-Invoke { "rm -f /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb || true"; };' >> /tmp/02apt-get-clean
+sudo mv /tmp/02apt-get-clean "${tempdir}/etc/apt/apt.conf.d/02apt-get-clean"
+
+#apt: drop translations
+echo 'Acquire::Languages "none";' > /tmp/02-no-languages
+sudo mv /tmp/02-no-languages "${tempdir}/etc/apt/apt.conf.d/02-no-languages"
 
 if [ "x${deb_distribution}" = "xdebian" ] ; then
-	#generic apt.conf tweaks for flash/mmc devices to save on wasted space...
-	sudo mkdir -p "${tempdir}/etc/apt/apt.conf.d/" || true
-
-	#apt: emulate apt-get clean:
-	echo '#Custom apt-get clean' > /tmp/02apt-get-clean
-	echo 'DPkg::Post-Invoke { "rm -f /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb || true"; };' >> /tmp/02apt-get-clean
-	echo 'APT::Update::Post-Invoke { "rm -f /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb || true"; };' >> /tmp/02apt-get-clean
-	sudo mv /tmp/02apt-get-clean "${tempdir}/etc/apt/apt.conf.d/02apt-get-clean"
-
-	#apt: drop translations
-	echo 'Acquire::Languages "none";' > /tmp/02-no-languages
-	sudo mv /tmp/02-no-languages "${tempdir}/etc/apt/apt.conf.d/02-no-languages"
-
 	#apt: /var/lib/apt/lists/, store compressed only
-	echo 'Acquire::GzipIndexes "true"; Acquire::CompressionTypes::Order:: "gz";' > /tmp/02compress-indexes
-	sudo mv /tmp/02compress-indexes "${tempdir}/etc/apt/apt.conf.d/02compress-indexes"
+	case "${deb_codename}" in
+	jessie)
+		echo 'Acquire::GzipIndexes "true"; Acquire::CompressionTypes::Order:: "gz";' > /tmp/02compress-indexes
+		sudo mv /tmp/02compress-indexes "${tempdir}/etc/apt/apt.conf.d/02compress-indexes"
+		;;
+	stretch)
+		echo 'Acquire::GzipIndexes "true"; APT::Compressor::xz::Cost "40";' > /tmp/02compress-indexes
+		sudo mv /tmp/02compress-indexes "${tempdir}/etc/apt/apt.conf.d/02compress-indexes"
+		;;
+	buster|sid)
+		###FIXME: close to release switch to ^ xz, right now buster is slow on apt...
+		echo 'Acquire::GzipIndexes "true"; APT::Compressor::gzip::Cost "40";' > /tmp/02compress-indexes
+		sudo mv /tmp/02compress-indexes "${tempdir}/etc/apt/apt.conf.d/02compress-indexes"
+		;;
+	esac
 
 	if [ "${apt_proxy}" ] ; then
 		#apt: make sure apt-cacher-ng doesn't break oracle-java8-installer
@@ -414,6 +426,14 @@ if [ "x${repo_rcnee}" = "xenable" ] ; then
 	sudo cp -v "${OIB_DIR}/target/keyring/repos.rcn-ee.net-archive-keyring.asc" "${tempdir}/tmp/repos.rcn-ee.net-archive-keyring.asc"
 fi
 
+if [ "x${repo_ros}" = "xenable" ] ; then
+	echo "" >> ${wfile}
+	echo "deb [arch=armhf] http://packages.ros.org/ros/${deb_distribution} ${deb_codename} main" >> ${wfile}
+	echo "#deb-src [arch=armhf] http://packages.ros.org/ros/${deb_distribution} ${deb_codename} main" >> ${wfile}
+
+	sudo cp -v "${OIB_DIR}/target/keyring/ros-archive-keyring.asc" "${tempdir}/tmp/ros-archive-keyring.asc"
+fi
+
 if [ -f /tmp/sources.list ] ; then
 	sudo mv /tmp/sources.list "${tempdir}/etc/apt/sources.list"
 fi
@@ -453,17 +473,7 @@ if [ "x${deb_arch}" = "xarmhf" ] ; then
 	case "${deb_distribution}" in
 	debian)
 		case "${deb_codename}" in
-		jessie)
-			#while bb-customizations installes "generic-board-startup.service" other boards/configs could use this default.
-			sudo cp "${OIB_DIR}/target/init_scripts/systemd-generic-board-startup.service" "${tempdir}/lib/systemd/system/generic-board-startup.service"
-			sudo chown root:root "${tempdir}/lib/systemd/system/generic-board-startup.service"
-			sudo cp "${OIB_DIR}/target/init_scripts/systemd-capemgr.service" "${tempdir}/lib/systemd/system/capemgr.service"
-			sudo chown root:root "${tempdir}/lib/systemd/system/capemgr.service"
-			sudo cp "${OIB_DIR}/target/init_scripts/capemgr" "${tempdir}/etc/default/"
-			sudo chown root:root "${tempdir}/etc/default/capemgr"
-			distro="Debian"
-			;;
-		stretch|buster)
+		jessie|stretch|buster)
 			#while bb-customizations installes "generic-board-startup.service" other boards/configs could use this default.
 			sudo cp "${OIB_DIR}/target/init_scripts/systemd-generic-board-startup.service" "${tempdir}/lib/systemd/system/generic-board-startup.service"
 			sudo chown root:root "${tempdir}/lib/systemd/system/generic-board-startup.service"
@@ -473,16 +483,6 @@ if [ "x${deb_arch}" = "xarmhf" ] ; then
 		;;
 	ubuntu)
 		case "${deb_codename}" in
-		vivid|wily|xenial)
-			#while bb-customizations installes "generic-board-startup.service" other boards/configs could use this default.
-			sudo cp "${OIB_DIR}/target/init_scripts/systemd-generic-board-startup.service" "${tempdir}/lib/systemd/system/generic-board-startup.service"
-			sudo chown root:root "${tempdir}/lib/systemd/system/generic-board-startup.service"
-			sudo cp "${OIB_DIR}/target/init_scripts/systemd-capemgr.service" "${tempdir}/lib/systemd/system/capemgr.service"
-			sudo chown root:root "${tempdir}/lib/systemd/system/generic-board-startup.service"
-			sudo cp "${OIB_DIR}/target/init_scripts/capemgr" "${tempdir}/etc/default/"
-			sudo chown root:root "${tempdir}/etc/default/capemgr"
-			distro="Ubuntu"
-			;;
 		bionic)
 			#while bb-customizations installes "generic-board-startup.service" other boards/configs could use this default.
 			sudo cp "${OIB_DIR}/target/init_scripts/systemd-generic-board-startup.service" "${tempdir}/lib/systemd/system/generic-board-startup.service"
@@ -498,15 +498,6 @@ if [ "x${deb_arch}" = "xarmel" ] ; then
 	sudo cp "${OIB_DIR}/target/init_scripts/systemd-generic-board-startup.service" "${tempdir}/lib/systemd/system/generic-board-startup.service"
 	sudo chown root:root "${tempdir}/lib/systemd/system/generic-board-startup.service"
 	distro="Debian"
-fi
-
-if [ -d "${tempdir}/usr/share/initramfs-tools/hooks/" ] ; then
-	if [ ! -f "${tempdir}/usr/share/initramfs-tools/hooks/dtbo" ] ; then
-		echo "log: adding: [initramfs-tools hook: dtbo]"
-		sudo cp "${OIB_DIR}/target/other/dtbo" "${tempdir}/usr/share/initramfs-tools/hooks/"
-		sudo chmod +x "${tempdir}/usr/share/initramfs-tools/hooks/dtbo"
-		sudo chown root:root "${tempdir}/usr/share/initramfs-tools/hooks/dtbo"
-	fi
 fi
 
 #Backward compatibility, as setup_sdcard.sh expects [lsb_release -si > /etc/rcn-ee.conf]
@@ -571,21 +562,6 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 			dpkg-divert --local --rename --add /sbin/initctl
 			ln -s /bin/true /sbin/initctl
 		fi
-
-		apt_options="--force-yes"
-		if [ "x\${deb_codename}" = "xstretch" ] ; then
-			apt_options=""
-		fi
-		if [ "x\${deb_codename}" = "xbuster" ] ; then
-			apt_options=""
-		fi
-		if [ "x\${deb_codename}" = "xxenial" ] ; then
-			apt_options="--allow-downgrades --allow-remove-essential --allow-change-held-packages"
-		fi
-		if [ "x\${deb_codename}" = "xbionic" ] ; then
-			apt_options=""
-		fi
-		echo "Log: (chroot): apt using extra: [\${apt_options}]"
 	}
 
 	install_pkg_updates () {
@@ -597,6 +573,10 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 			apt-key add /tmp/repos.rcn-ee.net-archive-keyring.asc
 			rm -f /tmp/repos.rcn-ee.net-archive-keyring.asc || true
 		fi
+		if [ "x${repo_ros}" = "xenable" ] ; then
+			apt-key add /tmp/ros-archive-keyring.asc
+			rm -f /tmp/ros-archive-keyring.asc || true
+		fi
 		if [ "x${repo_external}" = "xenable" ] ; then
 			apt-key add /tmp/${repo_external_key}
 			rm -f /tmp/${repo_external_key} || true
@@ -606,9 +586,22 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 			rm -f /tmp/${repo_flat_key} || true
 		fi
 
+		if [ -f /etc/resolv.conf ] ; then
+			echo "debug: networking: --------------"
+			cat /etc/resolv.conf || true
+			echo "---------------------------------"
+			cp -v /etc/resolv.conf /etc/resolv.conf.bak
+		fi
+
 		apt-get update
-		apt-get upgrade -y \${apt_options}
-		apt-get dist-upgrade -y \${apt_options}
+		apt-get upgrade -y
+		apt-get dist-upgrade -y
+
+		if [ ! -f /etc/resolv.conf ] ; then
+			#'/etc/resolv.conf.bak' -> '/etc/resolv.conf'
+			#cp: not writing through dangling symlink '/etc/resolv.conf'
+			cp -v --remove-destination /etc/resolv.conf.bak /etc/resolv.conf
+		fi
 
 		if [ "x${chroot_very_small_image}" = "xenable" ] ; then
 			if [ -f /bin/busybox ] ; then
@@ -654,30 +647,33 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 			#Install the user choosen list.
 			echo "Log: (chroot) Installing: ${deb_additional_pkgs}"
 			apt-get update
-			apt-get -y \${apt_options} install ${deb_additional_pkgs}
-		fi
-
-		if [ ! "x${repo_rcnee_pkg_version}" = "x" ] ; then
-			echo "Log: (chroot) Installing modules for: ${repo_rcnee_pkg_version}"
-			apt-get -y \${apt_options} install mt7601u-modules-${repo_rcnee_pkg_version} || true
-			apt-get -y \${apt_options} install rtl8723bu-modules-${repo_rcnee_pkg_version} || true
-			apt-get -y \${apt_options} install ti-cmem-modules-${repo_rcnee_pkg_version} || true
-			apt-get -y \${apt_options} install ti-debugss-modules-${repo_rcnee_pkg_version} || true
-			apt-get -y \${apt_options} install ti-temperature-modules-${repo_rcnee_pkg_version} || true
-			depmod -a ${repo_rcnee_pkg_version}
-			update-initramfs -u -k ${repo_rcnee_pkg_version}
+			apt-get -y install ${deb_additional_pkgs}
 		fi
 
 		if [ "x${chroot_enable_debian_backports}" = "xenable" ] ; then
 			if [ ! "x${chroot_debian_backports_pkg_list}" = "x" ] ; then
 				echo "Log: (chroot) Installing (from backports): ${chroot_debian_backports_pkg_list}"
-				sudo apt-get -y \${apt_options} -t ${deb_codename}-backports install ${chroot_debian_backports_pkg_list}
+				sudo apt-get -y -t ${deb_codename}-backports install ${chroot_debian_backports_pkg_list}
 			fi
 		fi
 
 		if [ ! "x${repo_external_pkg_list}" = "x" ] ; then
 			echo "Log: (chroot) Installing (from external repo): ${repo_external_pkg_list}"
-			apt-get -y \${apt_options} install ${repo_external_pkg_list}
+			apt-get -y install ${repo_external_pkg_list}
+		fi
+
+		if [ ! "x${repo_ros_pkg_list}" = "x" ] ; then
+			echo "Log: (chroot) Installing (from external repo): ${repo_ros_pkg_list}"
+			apt-get -y install ${repo_ros_pkg_list}
+		fi
+
+		##Install last...
+		if [ ! "x${repo_rcnee_pkg_version}" = "x" ] ; then
+			echo "Log: (chroot) Installing modules for: ${repo_rcnee_pkg_version}"
+			apt-get -y install rtl8723bu-modules-${repo_rcnee_pkg_version} || true
+			apt-get -y install ti-cmem-modules-${repo_rcnee_pkg_version} || true
+			depmod -a ${repo_rcnee_pkg_version}
+			update-initramfs -u -k ${repo_rcnee_pkg_version}
 		fi
 	}
 
@@ -726,7 +722,7 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 
 	run_deborphan () {
 		echo "Log: (chroot): deborphan is not reliable, run manual and add pkg list to: [chroot_manual_deborphan_list]"
-		apt-get -y \${apt_options} install deborphan
+		apt-get -y install deborphan
 
 		# Prevent deborphan from removing explicitly required packages
 		deborphan -A ${deb_additional_pkgs} ${repo_external_pkg_list} ${deb_include}
@@ -887,29 +883,10 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 
 	debian_startup_script () {
 		echo "Log: (chroot): debian_startup_script"
-		if [ "x${rfs_startup_scripts}" = "xenable" ] ; then
-			if [ -f /etc/init.d/generic-boot-script.sh ] ; then
-				chown root:root /etc/init.d/generic-boot-script.sh
-				chmod +x /etc/init.d/generic-boot-script.sh
-				insserv generic-boot-script.sh || true
-			fi
-
-			if [ -f /etc/init.d/capemgr.sh ] ; then
-				chown root:root /etc/init.d/capemgr.sh
-				chown root:root /etc/default/capemgr
-				chmod +x /etc/init.d/capemgr.sh
-				insserv capemgr.sh || true
-			fi
-		fi
 	}
 
 	ubuntu_startup_script () {
 		echo "Log: (chroot): ubuntu_startup_script"
-		if [ "x${rfs_startup_scripts}" = "xenable" ] ; then
-			if [ -f /etc/init/generic-boot-script.conf ] ; then
-				chown root:root /etc/init/generic-boot-script.conf
-			fi
-		fi
 
 		#Not Optional...
 		#(protects your kernel, from Ubuntu repo which may try to take over your system on an upgrade)...
@@ -931,10 +908,6 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 
 		if [ -f /lib/systemd/system/generic-board-startup.service ] ; then
 			systemctl enable generic-board-startup.service || true
-		fi
-
-		if [ -f /lib/systemd/system/capemgr.service ] ; then
-			systemctl enable capemgr.service || true
 		fi
 
 		if [ ! "x${rfs_opt_scripts}" = "x" ] ; then
@@ -983,7 +956,7 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 
 			#Remove ntpdate
 			if [ -f /usr/sbin/ntpdate ] ; then
-				apt-get remove -y \${apt_options} ntpdate --purge || true
+				apt-get remove -y ntpdate --purge || true
 			fi
 		fi
 
@@ -1017,7 +990,7 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 			systemctl disable systemd-networkd.service || true
 		fi
 
-		#We use connman...
+		#We use dnsmasq & connman...
 		if [ -f /lib/systemd/system/systemd-resolved.service ] ; then
 			systemctl disable systemd-resolved.service || true
 		fi
@@ -1089,6 +1062,11 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 
 	if [ -f /lib/systemd/systemd ] ; then
 		systemd_tweaks
+	fi
+
+	if [ -d /etc/update-motd.d/ ] ; then
+		#disable the message of the day (motd) welcome message
+		chmod -R 0644 /etc/update-motd.d/ || true
 	fi
 
 	if [ -f /etc/default/grub ] ; then
@@ -1281,6 +1259,9 @@ cat > "${DIR}/cleanup_script.sh" <<-__EOF__
 		if [ -d /var/cache/ti-c6000-cgt-v8.1.x-installer/ ] ; then
 			rm -rf /var/cache/ti-c6000-cgt-v8.1.x-installer/ || true
 		fi
+		if [ -d /var/cache/ti-c6000-cgt-v8.2.x-installer/ ] ; then
+			rm -rf /var/cache/ti-c6000-cgt-v8.2.x-installer/ || true
+		fi
 		if [ -d /var/cache/ti-pru-cgt-installer/ ] ; then
 			rm -rf /var/cache/ti-pru-cgt-installer/ || true
 		fi
@@ -1299,6 +1280,13 @@ cat > "${DIR}/cleanup_script.sh" <<-__EOF__
 			rm -rf /etc/apt/apt.conf.d/03-proxy-https || true
 		fi
 
+		#update time stamp before final cleanup...
+		if [ -f /lib/systemd/system/systemd-timesyncd.service ] ; then
+			touch /var/lib/systemd/clock
+
+			cat /etc/group | grep ^systemd-timesync && chown systemd-timesync:systemd-timesync /var/lib/systemd/clock || true
+		fi
+
 #		#This is tmpfs, clear out any left overs...
 #		if [ -d /run/ ] ; then
 #			rm -rf /run/* || true
@@ -1309,6 +1297,13 @@ cat > "${DIR}/cleanup_script.sh" <<-__EOF__
 	}
 
 	cleanup
+
+	if [ -f /usr/bin/connmanctl ] ; then
+		rm -rf /etc/resolv.conf.bak || true
+		rm -rf /etc/resolv.conf || true
+		ln -s /run/connman/resolv.conf /etc/resolv.conf
+	fi
+
 	rm -f /cleanup_script.sh || true
 __EOF__
 

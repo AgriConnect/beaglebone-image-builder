@@ -22,7 +22,7 @@
 
 export LC_ALL=C
 
-u_boot_release="v2018.03"
+u_boot_release="v2018.09"
 u_boot_release_x15="ti-2017.01"
 
 #contains: rfs_username, release_date
@@ -191,25 +191,19 @@ setup_desktop () {
 }
 
 install_pip_pkgs () {
-	if [ -f /usr/bin/python ] ; then
-		wget https://bootstrap.pypa.io/get-pip.py || true
-		if [ -f get-pip.py ] ; then
-			python get-pip.py
-			rm -f get-pip.py || true
-
-			if [ -f /usr/local/bin/pip ] ; then
-				if [ -f /usr/bin/make ] ; then
-					echo "Installing pip packages"
-					git_repo="https://github.com/adafruit/adafruit-beaglebone-io-python.git"
-					git_target_dir="/opt/source/adafruit-beaglebone-io-python"
-					git_clone
-					if [ -f ${git_target_dir}/.git/config ] ; then
-						cd ${git_target_dir}/
-						sed -i -e 's:4.1.0:3.4.0:g' setup.py
-						python setup.py install
-					fi
-					pip install iw_parse
-				fi
+	if [ -f /usr/bin/make ] ; then
+		echo "Installing pip packages"
+		git_repo="https://github.com/adafruit/adafruit-beaglebone-io-python.git"
+		git_target_dir="/opt/source/adafruit-beaglebone-io-python"
+		git_clone
+		if [ -f ${git_target_dir}/.git/config ] ; then
+			cd ${git_target_dir}/
+			sed -i -e 's:4.1.0:3.4.0:g' setup.py
+			if [ -f /usr/bin/python2 ] ; then
+				python2 setup.py install || true
+			fi
+			if [ -f /usr/bin/python3 ] ; then
+				python3 setup.py install || true
 			fi
 		fi
 	fi
@@ -299,11 +293,6 @@ install_git_repos () {
 	git_clone_branch
 
 	git_repo="https://github.com/RobertCNelson/dtb-rebuilder.git"
-	git_target_dir="/opt/source/dtb-4.9-ti"
-	git_branch="4.9-ti"
-	git_clone_branch
-
-	git_repo="https://github.com/RobertCNelson/dtb-rebuilder.git"
 	git_target_dir="/opt/source/dtb-4.14-ti"
 	git_branch="4.14-ti"
 	git_clone_branch
@@ -311,22 +300,6 @@ install_git_repos () {
 	git_repo="https://github.com/beagleboard/bb.org-overlays"
 	git_target_dir="/opt/source/bb.org-overlays"
 	git_clone
-	if [ -f ${git_target_dir}/.git/config ] ; then
-		cd ${git_target_dir}/
-		if [ ! "x${repo_rcnee_pkg_version}" = "x" ] ; then
-			is_kernel=$(echo ${repo_rcnee_pkg_version} | grep 3.8.13 || true)
-			if [ "x${is_kernel}" = "x" ] ; then
-				if [ -f /usr/bin/make ] ; then
-					if [ ! -f /lib/firmware/BB-ADC-00A0.dtbo ] ; then
-						make
-						make install
-						make clean
-					fi
-					update-initramfs -u -k ${repo_rcnee_pkg_version}
-				fi
-			fi
-		fi
-	fi
 
 	git_repo="https://github.com/StrawsonDesign/Robotics_Cape_Installer"
 	git_target_dir="/opt/source/Robotics_Cape_Installer"
@@ -363,6 +336,7 @@ other_source_links () {
 	wget --directory-prefix="/opt/source/u-boot_${u_boot_release}/" ${rcn_https}/${u_boot_release}/0002-U-Boot-BeagleBone-Cape-Manager.patch
 	mkdir -p /opt/source/u-boot_${u_boot_release_x15}/
 	wget --directory-prefix="/opt/source/u-boot_${u_boot_release_x15}/" ${rcn_https}/${u_boot_release_x15}/0001-beagle_x15-uEnv.txt-bootz-n-fixes.patch
+	rm /home/${rfs_username}/.wget-hsts || true
 
 	echo "u-boot_${u_boot_release} : /opt/source/u-boot_${u_boot_release}" >> /opt/source/list.txt
 	echo "u-boot_${u_boot_release_x15} : /opt/source/u-boot_${u_boot_release_x15}" >> /opt/source/list.txt
@@ -402,6 +376,7 @@ if [ -f /usr/bin/git ] ; then
 	install_git_repos
 	git config --global --unset-all user.email
 	git config --global --unset-all user.name
+	chown ${rfs_username}:${rfs_username} /home/${rfs_username}/.gitconfig
 fi
 other_source_links
 unsecure_root
