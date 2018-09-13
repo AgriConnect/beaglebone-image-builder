@@ -1,6 +1,6 @@
 #!/bin/sh -e
 #
-# Copyright (c) 2014-2016 Robert Nelson <robertcnelson@gmail.com>
+# Copyright (c) 2014-2018 Robert Nelson <robertcnelson@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -79,15 +79,6 @@ git_clone_full() {
 }
 
 setup_system() {
-	#For when sed/grep/etc just gets way to complex...
-	cd /
-	if [ -f /opt/scripts/mods/debian-add-sbin-usr-sbin-to-default-path.diff ] ; then
-		if [ -f /usr/bin/patch ] ; then
-			echo "Patching: /etc/profile"
-			patch -p1 < /opt/scripts/mods/debian-add-sbin-usr-sbin-to-default-path.diff
-		fi
-	fi
-
 	echo "" >> /etc/securetty
 	echo "#USB Gadget Serial Port" >> /etc/securetty
 	echo "ttyGS0" >> /etc/securetty
@@ -101,16 +92,6 @@ install_git_repos() {
 	git_repo="https://github.com/strahlex/BBIOConfig.git"
 	git_target_dir="/opt/source/BBIOConfig"
 	git_clone
-
-	git_repo="https://github.com/RobertCNelson/dtb-rebuilder.git"
-	git_target_dir="/opt/source/dtb-4.4-ti"
-	git_branch="4.4-ti"
-	git_clone_branch
-
-	git_repo="https://github.com/RobertCNelson/dtb-rebuilder.git"
-	git_target_dir="/opt/source/dtb-4.9-ti"
-	git_branch="4.9-ti"
-	git_clone_branch
 
 	git_repo="https://github.com/RobertCNelson/dtb-rebuilder.git"
 	git_target_dir="/opt/source/dtb-4.14-ti"
@@ -169,8 +150,10 @@ setup_gateway_tool() {
 
 enable_redis_socket() {
 	FILEPATH=/etc/redis/redis.conf
-	sed -i 's/# unixsocket/unixsocket/g' ${FILEPATH}
-	sed -Ei 's/unixsocketperm [0-9]+/unixsocketperm 766/g' ${FILEPATH}
+	if [ -f $FILEPATH ] ; then
+		sed -i 's/# unixsocket/unixsocket/g' ${FILEPATH}
+		sed -Ei 's/unixsocketperm [0-9]+/unixsocketperm 766/g' ${FILEPATH}
+	fi
 }
 
 add_apt_repo() {
@@ -185,22 +168,6 @@ change_apt_mirror() {
 	sed -i "s:deb.debian.org/debian :opensource.xtdv.net/debian :g" /etc/apt/sources.list
 }
 
-other_source_links () {
-	rcn_https="https://rcn-ee.com/repos/git/u-boot-patches"
-
-	mkdir -p /opt/source/u-boot_${u_boot_release}/
-	wget --directory-prefix="/opt/source/u-boot_${u_boot_release}/" ${rcn_https}/${u_boot_release}/0001-omap3_beagle-uEnv.txt-bootz-n-fixes.patch
-	wget --directory-prefix="/opt/source/u-boot_${u_boot_release}/" ${rcn_https}/${u_boot_release}/0001-am335x_evm-uEnv.txt-bootz-n-fixes.patch
-	wget --directory-prefix="/opt/source/u-boot_${u_boot_release}/" ${rcn_https}/${u_boot_release}/0002-U-Boot-BeagleBone-Cape-Manager.patch
-	mkdir -p /opt/source/u-boot_${u_boot_release_x15}/
-	wget --directory-prefix="/opt/source/u-boot_${u_boot_release_x15}/" ${rcn_https}/${u_boot_release_x15}/0001-beagle_x15-uEnv.txt-bootz-n-fixes.patch
-
-	echo "u-boot_${u_boot_release} : /opt/source/u-boot_${u_boot_release}" >> /opt/source/list.txt
-	echo "u-boot_${u_boot_release_x15} : /opt/source/u-boot_${u_boot_release_x15}" >> /opt/source/list.txt
-
-	chown -R ${rfs_username}:${rfs_username} /opt/source/
-}
-
 passwordless_sudo () {
 	if [ -d /etc/sudoers.d/ ] ; then
 		# Don't require password for sudo access
@@ -211,10 +178,10 @@ passwordless_sudo () {
 
 is_this_qemu
 setup_system
+add_apt_repo
 add_pip_repo
 install_pip
 enable_redis_socket
-add_apt_repo
 change_apt_mirror
 
 if [ -f /usr/bin/git ] ; then
@@ -225,7 +192,7 @@ if [ -f /usr/bin/git ] ; then
 	setup_gateway_tool
 	git config --global --unset-all user.email
 	git config --global --unset-all user.name
+	chown ${rfs_username}:${rfs_username} /home/${rfs_username}/.gitconfig
 fi
 
-other_source_links
 passwordless_sudo
