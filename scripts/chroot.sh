@@ -1352,6 +1352,11 @@ if [ -f "${tempdir}/etc/resolv.conf" ] ; then
 	sudo sh -c "echo 'nameserver 8.8.4.4' >> ${wfile}"
 fi
 
+# Add wifi configs for connman
+if [ -d "${OIB_DIR}/target/other/connman/" ] && [ -d "${tempdir}/var/lib/connman/" ] ; then
+	sudo cp -v "${OIB_DIR}/target/other/connman/*.config" "${tempdir}/var/lib/connman/"
+fi
+
 report_size
 chroot_umount
 

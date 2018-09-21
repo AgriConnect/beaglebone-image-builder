@@ -2,6 +2,7 @@ latest_version
 ignore/
 deploy/
 git/
+target/other/connman/
 *.host
 release
 .project

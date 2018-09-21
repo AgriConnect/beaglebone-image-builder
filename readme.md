@@ -16,6 +16,8 @@ What are excluded:
 
 ## How to build
 
+Place some wifi config for connman to _target/other/connman/_ folder.
+
 Run `./build-image-for-agriconnect.sh`. It will produce _\*.img.xz_ and _\*.bmap_ files in _deploy/_ folder.
 
 ## How I can find hardware to run this build script
@@ -53,7 +55,7 @@ BeagleBoard.org BeagleBone Blue:
 BeagleBoard.org BeagleBone Black Wireless:
 
       A5: [aa 55 33 ee 41 33 33 35  42 4e 4c 54 42 57 41 35 |.U3.A335BNLTBWA5|]
-      
+
 BeagleBoard.org PocketBeagle:
 
       A2: [aa 55 33 ee 41 33 33 35  50 42 47 4c 30 30 41 32 |.U3.A335PBGL00A2|]
@@ -82,7 +84,7 @@ SanCloud BeagleBone Enhanced:
 MENTOREL BeagleBone uSomIQ:
 
        6: [aa 55 33 ee 41 33 33 35  42 4e 4c 54 4d 45 30 36 |.U3.A335BNLTME06|]
-       
+
 Neuromeka BeagleBone Air:
 
       A0: [aa 55 33 ee 41 33 33 35  42 4e 4c 54 4e 41 44 30 |.U3.A335BNLTNAD0|]
