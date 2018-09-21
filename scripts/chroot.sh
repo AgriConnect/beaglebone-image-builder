@@ -1321,6 +1321,11 @@ if [ -d "${tempdir}/etc/kernel/postinst.d/" ] ; then
 	fi
 fi
 
+# Add wifi configs for connman
+if [ -d "${OIB_DIR}/target/other/connman/" ] && [ -d "${tempdir}/var/lib/connman/" ] ; then
+	sudo cp -v "${OIB_DIR}/target/other/connman/*.config" "${tempdir}/var/lib/connman/"
+fi
+
 if [ -f "${tempdir}/usr/bin/qemu-arm-static" ] ; then
 	sudo rm -f "${tempdir}/usr/bin/qemu-arm-static" || true
 fi
@@ -1350,11 +1355,6 @@ if [ -f "${tempdir}/etc/resolv.conf" ] ; then
 	wfile="${tempdir}/etc/resolv.conf"
 	sudo sh -c "echo 'nameserver 8.8.8.8' > ${wfile}"
 	sudo sh -c "echo 'nameserver 8.8.4.4' >> ${wfile}"
-fi
-
-# Add wifi configs for connman
-if [ -d "${OIB_DIR}/target/other/connman/" ] && [ -d "${tempdir}/var/lib/connman/" ] ; then
-	sudo cp -v "${OIB_DIR}/target/other/connman/*.config" "${tempdir}/var/lib/connman/"
 fi
 
 report_size
