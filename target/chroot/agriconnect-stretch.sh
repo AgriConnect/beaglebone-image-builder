@@ -174,6 +174,10 @@ change_apt_mirror() {
 	sed -i "s:deb.debian.org/debian :opensource.xtdv.net/debian :g" /etc/apt/sources.list
 }
 
+install_bash_aliases() {
+	echo "alias ip=\"ip -c\"\nalias ll=\"ls -l\"" > /home/${rfs_username}/.bash_aliases
+}
+
 passwordless_sudo () {
 	if [ -d /etc/sudoers.d/ ] ; then
 		# Don't require password for sudo access
@@ -187,6 +191,7 @@ setup_system
 add_apt_repo
 add_pip_repo
 install_pip
+install_bash_aliases
 enable_redis_socket
 change_apt_mirror
 
@@ -201,4 +206,5 @@ if [ -f /usr/bin/git ] ; then
 	chown ${rfs_username}:${rfs_username} /home/${rfs_username}/.gitconfig
 fi
 
+install_bash_aliases
 passwordless_sudo
