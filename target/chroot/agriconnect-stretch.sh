@@ -104,11 +104,17 @@ install_git_repos() {
 }
 
 add_pip_repo() {
-	pip_folder=/home/${rfs_username}/.pip
+	pip_folder=/home/${rfs_username}/.config/pip
 	mkdir ${pip_folder} || true
 	if [ -d ${pip_folder} ] ; then
 		echo -e "[global]\nextra-index-url=https://repo.fury.io/agriconnect/" > ${pip_folder}/pip.conf
 		chown debian: -R ${pip_folder}
+	fi
+	# For root
+	pip_folder=/root/.config/pip
+	mkdir ${pip_folder} || true
+	if [ -d ${pip_folder} ] ; then
+		echo -e "[global]\nextra-index-url=https://repo.fury.io/agriconnect/" > ${pip_folder}/pip.conf
 	fi
 }
 
