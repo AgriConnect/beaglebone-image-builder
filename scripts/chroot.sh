@@ -1323,7 +1323,7 @@ fi
 
 # Add wifi configs for connman
 if [ -d "${OIB_DIR}/target/other/connman/" ] && [ -d "${tempdir}/var/lib/connman/" ] ; then
-	sudo cp -v "${OIB_DIR}/target/other/connman/*.config" "${tempdir}/var/lib/connman/"
+	sudo cp -v ${OIB_DIR}/target/other/connman/*.config ${tempdir}/var/lib/connman/
 fi
 
 if [ -f "${tempdir}/usr/bin/qemu-arm-static" ] ; then
