@@ -175,7 +175,8 @@ change_apt_mirror() {
 }
 
 install_bash_aliases() {
-	echo "alias ip=\"ip -c\"\nalias ll=\"ls -l\"" > /home/${rfs_username}/.bash_aliases
+	echo -e "alias ip=\"ip -c\"\nalias ll=\"ls -l\"" > /home/${rfs_username}/.bash_aliases
+	chown ${rfs_username}:${rfs_username} /home/${rfs_username}/.bash_aliases
 }
 
 passwordless_sudo () {
