@@ -162,6 +162,11 @@ enable_redis_socket() {
 	fi
 }
 
+disable_ipv6_avahi() {
+	# Avahi has bug with IPv6, and make it fail to propage mDNS domain.
+	sed -i 's/use-ipv6=yes/use-ipv6=no/g' /etc/avahi/avahi-daemon.conf
+}
+
 add_apt_repo() {
 	wget -qO- https://repos.influxdata.com/influxdb.key | apt-key add -
 	echo "deb https://repos.influxdata.com/debian stretch stable" > /etc/apt/sources.list.d/influxdata.list
@@ -194,6 +199,7 @@ add_pip_repo
 install_pip
 install_bash_aliases
 enable_redis_socket
+disable_ipv6_avahi
 change_apt_mirror
 
 if [ -f /usr/bin/git ] ; then
