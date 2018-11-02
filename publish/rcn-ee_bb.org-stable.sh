@@ -69,13 +69,11 @@ debian_jessie_seeed_lxqt_4gb="debian-8.11-seeed-lxqt-4gb-armhf-${time}"
 
        ubuntu_bionic_ros_iot="ubuntu-18.04.1-ros-iot-armhf-${time}"
 
-xz_img="xz -z -8"
-#xz_tar="xz -z -8"
-xz_tar="xz -T2 -z -8"
+xz_img="xz -T2 -z -8"
+xz_tar="xz -T3 -z -8"
 
-beaglebone="--dtb beaglebone --rootfs_label rootfs --hostname beaglebone --enable-uboot-cape-overlays"
+beaglebone="--dtb beaglebone --rootfs_label rootfs --hostname beaglebone"
 pru_rproc_v44ti="--enable-uboot-pru-rproc-44ti"
-pru_rproc_v49ti="--enable-uboot-pru-rproc-49ti"
 pru_rproc_v414ti="--enable-uboot-pru-rproc-414ti"
 
 beagle_xm="--dtb omap3-beagle-xm --rootfs_label rootfs --hostname beagleboard"
@@ -209,8 +207,8 @@ options="--img-4gb BBBL-blank-\${base_rootfs} ${beaglebone} ${pru_rproc_v44ti} -
 ###lxqt-2gb image (jessie):
 base_rootfs="${debian_jessie_lxqt_2gb}" ; blend="lxqt-2gb" ; extract_base_rootfs
 
-options="--img-2gb bone-\${base_rootfs}  ${beaglebone} ${pru_rproc_v49ti}" ; generate_img
-options="--img-2gb BBB-blank-\${base_rootfs} ${beaglebone}  ${pru_rproc_v49ti} --emmc-flasher" ; generate_img
+options="--img-2gb bone-\${base_rootfs}  ${beaglebone} ${pru_rproc_v44ti}" ; generate_img
+options="--img-2gb BBB-blank-\${base_rootfs} ${beaglebone}  ${pru_rproc_v44ti} --emmc-flasher" ; generate_img
 
 ###lxqt-4gb image (jessie):
 base_rootfs="${debian_jessie_lxqt_4gb}" ; blend="lxqt-4gb" ; extract_base_rootfs

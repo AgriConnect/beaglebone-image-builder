@@ -41,6 +41,7 @@ BeagleBoard.org BeagleBone (original bone/white):
 
 BeagleBoard.org or Element14 BeagleBone Black:
 
+      A5: [aa 55 33 ee 41 33 33 35  42 4e 4c 54 30 30 41 35 |.U3.A335BNLT00A5|]
      A5A: [aa 55 33 ee 41 33 33 35  42 4e 4c 54 30 41 35 41 |.U3.A335BNLT0A5A|]
      A5B: [aa 55 33 ee 41 33 33 35  42 4e 4c 54 30 41 35 42 |.U3.A335BNLT0A5B|]
      A5C: [aa 55 33 ee 41 33 33 35  42 4e 4c 54 30 41 35 43 |.U3.A335BNLT0A5C|]

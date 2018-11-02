@@ -1,5 +1,5 @@
-armv7 STABLE 4.18.7-armv7-x7
-bone-rt LTS414 4.14.67-bone-rt-r16
+armv7 LTS419 4.19.0-armv7-x4
+bone-rt LTS414 4.14.71-bone-rt-r17
 ti LTS44 4.4.113-ti-r149
-ti LTS414 4.14.67-ti-r74
-ti-rt LTS414 4.14.67-ti-rt-r74
+ti LTS414 4.14.71-ti-r81
+ti-rt LTS414 4.14.71-ti-rt-r81
