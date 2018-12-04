@@ -171,7 +171,7 @@ add_apt_repo() {
 	wget -qO- https://repos.influxdata.com/influxdb.key | apt-key add -
 	echo "deb https://repos.influxdata.com/debian stretch stable" > /etc/apt/sources.list.d/influxdata.list
 	# For Python3.6
-	echo "deb [trusted=yes] https://repo.fury.io/agriconnect/ /" > /etc/apt/sources.list.d/fury.list
+	echo "deb [trusted=yes] https://apt.fury.io/agriconnect/ /" > /etc/apt/sources.list.d/fury.list
 }
 
 change_apt_mirror() {
