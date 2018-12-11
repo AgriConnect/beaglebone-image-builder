@@ -56,6 +56,7 @@ git_clone() {
 	qemu_command="git clone ${git_repo} ${git_target_dir} --depth 1 || true"
 	qemu_warning
 	git clone ${git_repo} ${git_target_dir} --depth 1 || true
+	chown -R 1000:1000 ${git_target_dir}
 	sync
 	echo "${git_target_dir} : ${git_repo}" >> /opt/source/list.txt
 }
@@ -65,6 +66,7 @@ git_clone_branch() {
 	qemu_command="git clone -b ${git_branch} ${git_repo} ${git_target_dir} --depth 1 || true"
 	qemu_warning
 	git clone -b ${git_branch} ${git_repo} ${git_target_dir} --depth 1 || true
+	chown -R 1000:1000 ${git_target_dir}
 	sync
 	echo "${git_target_dir} : ${git_repo}" >> /opt/source/list.txt
 }
@@ -74,6 +76,7 @@ git_clone_full() {
 	qemu_command="git clone ${git_repo} ${git_target_dir} || true"
 	qemu_warning
 	git clone ${git_repo} ${git_target_dir} || true
+	chown -R 1000:1000 ${git_target_dir}
 	sync
 	echo "${git_target_dir} : ${git_repo}" >> /opt/source/list.txt
 }
@@ -96,6 +99,11 @@ install_git_repos() {
 	git_repo="https://github.com/RobertCNelson/dtb-rebuilder.git"
 	git_target_dir="/opt/source/dtb-4.14-ti"
 	git_branch="4.14-ti"
+	git_clone_branch
+
+	git_repo="https://github.com/RobertCNelson/dtb-rebuilder.git"
+	git_target_dir="/opt/source/dtb-4.19"
+	git_branch="4.19.x"
 	git_clone_branch
 
 	git_repo="https://github.com/beagleboard/bb.org-overlays"
