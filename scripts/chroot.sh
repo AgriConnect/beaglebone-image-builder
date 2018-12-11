@@ -594,15 +594,31 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 			cp -v /etc/resolv.conf /etc/resolv.conf.bak
 		fi
 
+		echo "---------------------------------"
+		echo "debug: apt-get update------------"
 		apt-get update
+		echo "---------------------------------"
+
+		echo "debug: apt-get upgrade -y--------"
 		apt-get upgrade -y
-		apt-get dist-upgrade -y
 
 		if [ ! -f /etc/resolv.conf ] ; then
+			echo "debug: /etc/resolv.conf was removed! Fixing..."
 			#'/etc/resolv.conf.bak' -> '/etc/resolv.conf'
 			#cp: not writing through dangling symlink '/etc/resolv.conf'
 			cp -v --remove-destination /etc/resolv.conf.bak /etc/resolv.conf
 		fi
+		echo "---------------------------------"
+
+		echo "debug: apt-get dist-upgrade -y---"
+		apt-get dist-upgrade -y
+		if [ ! -f /etc/resolv.conf ] ; then
+			echo "debug: /etc/resolv.conf was removed! Fixing..."
+			#'/etc/resolv.conf.bak' -> '/etc/resolv.conf'
+			#cp: not writing through dangling symlink '/etc/resolv.conf'
+			cp -v --remove-destination /etc/resolv.conf.bak /etc/resolv.conf
+		fi
+		echo "---------------------------------"
 
 		if [ "x${chroot_very_small_image}" = "xenable" ] ; then
 			if [ -f /bin/busybox ] ; then
@@ -666,6 +682,8 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 		if [ ! "x${repo_ros_pkg_list}" = "x" ] ; then
 			echo "Log: (chroot) Installing (from external repo): ${repo_ros_pkg_list}"
 			apt-get -y install ${repo_ros_pkg_list}
+			#ROS: ubuntu, extra crude, cleanup....
+			apt autoremove -y || true
 		fi
 
 		if [ ! "x${repo_rcnee_chromium_special}" = "x" ] ; then
@@ -673,6 +691,20 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 			apt-cache madison chromium || true
 			apt -y --allow-downgrades install chromium=${repo_rcnee_chromium_special}* || true
 			apt-mark hold chromium || true
+		fi
+
+		#Lets force depmod...
+		if [ ! "x${repo_rcnee_depmod0}" = "x" ] ; then
+			echo "Log: (chroot) Running depmod for: ${repo_rcnee_depmod0}"
+			depmod -a ${repo_rcnee_depmod0}
+			update-initramfs -u -k ${repo_rcnee_depmod0}
+		fi
+
+		#Lets force depmod...
+		if [ ! "x${repo_rcnee_depmod1}" = "x" ] ; then
+			echo "Log: (chroot) Running depmod for: ${repo_rcnee_depmod1}"
+			depmod -a ${repo_rcnee_depmod1}
+			update-initramfs -u -k ${repo_rcnee_depmod1}
 		fi
 
 		##Install last...
