@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 TODAY=$(date +%Y-%m-%d)
-VERNUM=9.5
+VERNUM=9.6
 
 check_tools() {
 	unset need_tool
