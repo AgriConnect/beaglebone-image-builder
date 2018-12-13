@@ -12,13 +12,12 @@ check_tools() {
 	command -v partprobe >/dev/null 2>&1 || { echo "Missing partprobe "; need_tool=1; }
 	command -v kpartx >/dev/null 2>&1 || { echo "Missing kpartx "; need_tool=1; }
 	command -v bmaptool >/dev/null 2>&1 || { echo "Missing bmaptool "; need_tool=1; }
-	command -v pixz >/dev/null 2>&1 || { echo "Missing pixz "; need_tool=1; }
 	export PATH=$OLD_PATH
 	unset OLD_PATH
 
 	if [ ${need_tool} ] ; then
 		echo "need_tool: ${need_tool}"
-		echo "Please install these packages: dosfstools git-core kpartx wget parted bmap-tools pixz"
+		echo "Please install these packages: dosfstools git-core kpartx wget parted bmap-tools"
 		echo ""
 		exit
 	fi
@@ -39,7 +38,7 @@ generate_img() {
 	bmaptool create ${IMGFILE} -o ${FILENAME}-4gb.bmap
 	# Compress the image file
 	echo "Compress the image file ${IMGFILE}"
-	pixz ${IMGFILE}
+	xz -T 0 ${IMGFILE}
 	# Go back to original working folder
 	cd ..
 }
