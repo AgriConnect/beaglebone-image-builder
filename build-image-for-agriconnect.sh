@@ -45,6 +45,9 @@ generate_img() {
 
 check_tools
 
+# Uncomment this line to enable APT proxy
+# export apt_proxy=localhost:3142/
+
 sudo echo "Start sudo session"
 
 ./RootStock-NG.sh -c agriconnect_console_debian_stretch_armhf
