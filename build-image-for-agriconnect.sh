@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 TODAY=$(date +%Y-%m-%d)
-VERNUM=9.6
+VERNUM=10.0
 
 check_tools() {
 	unset need_tool
@@ -50,6 +50,6 @@ check_tools
 
 sudo echo "Start sudo session"
 
-./RootStock-NG.sh -c agriconnect_console_debian_stretch_armhf
+./RootStock-NG.sh -c agriconnect_console_debian_buster_armhf
 
 generate_img
