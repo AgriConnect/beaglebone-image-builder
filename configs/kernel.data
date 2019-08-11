@@ -1,6 +1,8 @@
-armv7 LTS419 4.19.8-armv7-x11
-bone-rt LTS414 4.14.71-bone-rt-r17
-ti LTS44 4.4.155-ti-r150
-ti LTS414 4.14.79-ti-r84
-ti-rt LTS414 4.14.79-ti-rt-r84
-ti LTS419 4.19.5-ti-r3
+armv7 STABLE 5.2.5-armv7-x3
+bone-rt LTS414 4.14.134-bone-rt-r25
+bone-rt LTS419 4.19.59-bone-rt-r36
+ti LTS44 4.4.155-ti-r155
+ti LTS414 4.14.108-ti-r114
+ti-rt LTS414 4.14.108-ti-rt-r114
+ti LTS419 4.19.59-ti-r25
+ti-rt LTS419 4.19.59-ti-rt-r25

@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2009-2018 Robert Nelson <robertcnelson@gmail.com>
+# Copyright (c) 2009-2019 Robert Nelson <robertcnelson@gmail.com>
 # Copyright (c) 2010 Mario Di Francesco <mdf-code@digitalexile.it>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -830,14 +830,9 @@ populate_boot () {
 
 	if [ "x${conf_board}" = "xam335x_boneblack" ] || [ "x${conf_board}" = "xam335x_evm" ] ; then
 
-		if [ ! "x${bbb_old_bootloader_in_emmc}" = "xenable" ] ; then
-			wfile="${TEMPDIR}/disk/bbb-uEnv.txt"
-			echo "##Rename as: uEnv.txt to override old bootloader in eMMC" > ${wfile}
-			echo "##These are needed to be compliant with Angstrom's 2013.06.20 u-boot." >> ${wfile}
-		else
-			wfile="${TEMPDIR}/disk/uEnv.txt"
-			echo "##These are needed to be compliant with Angstrom's 2013.06.20 u-boot." > ${wfile}
-		fi
+		wfile="${TEMPDIR}/disk/bbb-uEnv.txt"
+		echo "##Rename as: uEnv.txt to override old bootloader in eMMC" > ${wfile}
+		echo "##These are needed to be compliant with Angstrom's 2013.06.20 u-boot." >> ${wfile}
 
 		echo "" >> ${wfile}
 		echo "loadaddr=0x82000000" >> ${wfile}
@@ -915,10 +910,8 @@ populate_boot () {
 	fi
 
 	if [ ${has_uenvtxt} ] ; then
-		if [ ! "x${bbb_old_bootloader_in_emmc}" = "xenable" ] ; then
-			cp -v "${DIR}/uEnv.txt" ${TEMPDIR}/disk/uEnv.txt
-			echo "-----------------------------"
-		fi
+		cp -v "${DIR}/uEnv.txt" ${TEMPDIR}/disk/uEnv.txt
+		echo "-----------------------------"
 	fi
 
 	cd ${TEMPDIR}/disk
@@ -1251,8 +1244,16 @@ populate_rootfs () {
 			echo "###" >> ${wfile}
 			echo "###Disable auto loading of virtual capes (emmc/video/wireless/adc)" >> ${wfile}
 			echo "#disable_uboot_overlay_emmc=1" >> ${wfile}
-			echo "#disable_uboot_overlay_video=1" >> ${wfile}
-			echo "#disable_uboot_overlay_audio=1" >> ${wfile}
+			if [ "x${uboot_disable_video}" = "xenable" ] ; then
+				echo "disable_uboot_overlay_video=1" >> ${wfile}
+			else
+				echo "#disable_uboot_overlay_video=1" >> ${wfile}
+			fi
+			if [ "x${uboot_disable_audio}" = "xenable" ] ; then
+				echo "disable_uboot_overlay_audio=1" >> ${wfile}
+			else
+				echo "#disable_uboot_overlay_audio=1" >> ${wfile}
+			fi
 			echo "#disable_uboot_overlay_wireless=1" >> ${wfile}
 			echo "#disable_uboot_overlay_adc=1" >> ${wfile}
 			echo "###" >> ${wfile}
@@ -1263,7 +1264,9 @@ populate_rootfs () {
 				echo "uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-4-TI-00A0.dtbo" >> ${wfile}
 				echo "###pru_rproc (4.14.x-ti kernel)" >> ${wfile}
 				echo "#uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-14-TI-00A0.dtbo" >> ${wfile}
-				echo "###pru_uio (4.4.x-ti, 4.14.x-ti & mainline/bone kernel)" >> ${wfile}
+				echo "###pru_rproc (4.19.x-ti kernel)" >> ${wfile}
+				echo "#uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-19-TI-00A0.dtbo" >> ${wfile}
+				echo "###pru_uio (4.4.x-ti, 4.14.x-ti, 4.19.x-ti & mainline/bone kernel)" >> ${wfile}
 				echo "#uboot_overlay_pru=/lib/firmware/AM335X-PRU-UIO-00A0.dtbo" >> ${wfile}
 				use_pru_uio="blocked"
 			fi
@@ -1272,7 +1275,31 @@ populate_rootfs () {
 				echo "#uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-4-TI-00A0.dtbo" >> ${wfile}
 				echo "###pru_rproc (4.14.x-ti kernel)" >> ${wfile}
 				echo "uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-14-TI-00A0.dtbo" >> ${wfile}
-				echo "###pru_uio (4.4.x-ti, 4.14.x-ti & mainline/bone kernel)" >> ${wfile}
+				echo "###pru_rproc (4.19.x-ti kernel)" >> ${wfile}
+				echo "#uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-19-TI-00A0.dtbo" >> ${wfile}
+				echo "###pru_uio (4.4.x-ti, 4.14.x-ti, 4.19.x-ti & mainline/bone kernel)" >> ${wfile}
+				echo "#uboot_overlay_pru=/lib/firmware/AM335X-PRU-UIO-00A0.dtbo" >> ${wfile}
+				use_pru_uio="blocked"
+			fi
+			if [ "x${uboot_pru_rproc_419ti}" = "xenable" ] ; then
+				echo "###pru_rproc (4.4.x-ti kernel)" >> ${wfile}
+				echo "#uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-4-TI-00A0.dtbo" >> ${wfile}
+				echo "###pru_rproc (4.14.x-ti kernel)" >> ${wfile}
+				echo "#uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-14-TI-00A0.dtbo" >> ${wfile}
+				echo "###pru_rproc (4.19.x-ti kernel)" >> ${wfile}
+				echo "uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-19-TI-00A0.dtbo" >> ${wfile}
+				echo "###pru_uio (4.4.x-ti, 4.14.x-ti, 4.19.x-ti & mainline/bone kernel)" >> ${wfile}
+				echo "#uboot_overlay_pru=/lib/firmware/AM335X-PRU-UIO-00A0.dtbo" >> ${wfile}
+				use_pru_uio="blocked"
+			fi
+			if [ "x${mainline_pru_rproc}" = "xenable" ] ; then
+				echo "###pru_rproc (4.4.x-ti kernel)" >> ${wfile}
+				echo "#uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-4-TI-00A0.dtbo" >> ${wfile}
+				echo "###pru_rproc (4.14.x-ti kernel)" >> ${wfile}
+				echo "#uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-14-TI-00A0.dtbo" >> ${wfile}
+				echo "###pru_rproc (4.19.x-ti kernel)" >> ${wfile}
+				echo "#uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-19-TI-00A0.dtbo" >> ${wfile}
+				echo "###pru_uio (4.4.x-ti, 4.14.x-ti, 4.19.x-ti & mainline/bone kernel)" >> ${wfile}
 				echo "#uboot_overlay_pru=/lib/firmware/AM335X-PRU-UIO-00A0.dtbo" >> ${wfile}
 				use_pru_uio="blocked"
 			fi
@@ -1281,12 +1308,14 @@ populate_rootfs () {
 				echo "#uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-4-TI-00A0.dtbo" >> ${wfile}
 				echo "###pru_rproc (4.14.x-ti kernel)" >> ${wfile}
 				echo "#uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-14-TI-00A0.dtbo" >> ${wfile}
-				echo "###pru_uio (4.4.x-ti, 4.14.x-ti & mainline/bone kernel)" >> ${wfile}
+				echo "###pru_rproc (4.19.x-ti kernel)" >> ${wfile}
+				echo "#uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-19-TI-00A0.dtbo" >> ${wfile}
+				echo "###pru_uio (4.4.x-ti, 4.14.x-ti, 4.19.x-ti & mainline/bone kernel)" >> ${wfile}
 				echo "uboot_overlay_pru=/lib/firmware/AM335X-PRU-UIO-00A0.dtbo" >> ${wfile}
 			fi
 			echo "###" >> ${wfile}
 			echo "###Cape Universal Enable" >> ${wfile}
-			if [ "x${uboot_cape_overlays}" = "xenable" ] ; then
+			if [ "x${uboot_cape_overlays}" = "xenable" ] && [ "x${enable_cape_universal}" = "xenable" ] ; then
 				echo "enable_uboot_cape_universal=1" >> ${wfile}
 			else
 				echo "#enable_uboot_cape_universal=1" >> ${wfile}
@@ -1306,10 +1335,13 @@ populate_rootfs () {
 		fi
 	fi
 
-	cmdline="coherent_pool=1M net.ifnames=0 quiet"
-	if [ "x${enable_cape_universal}" = "xenable" ] ; then
-		cmdline="${cmdline} cape_universal=enable"
+	cmdline="coherent_pool=1M net.ifnames=0"
+
+	if [ ! "x${rng_core}" = "x" ] ; then
+		cmdline="${cmdline} ${rng_core}"
 	fi
+
+	cmdline="${cmdline} quiet"
 
 	unset kms_video
 
@@ -1402,13 +1434,6 @@ populate_rootfs () {
 		fi
 	fi
 
-	#oob out of box experience:
-	if [ ! "x${oobe_cape}" = "x" ] ; then
-		echo "" >> ${wfile}
-		echo "dtb=am335x-boneblack-overlay.dtb" >> ${wfile}
-		echo "cape_enable=bone_capemgr.enable_partno=${oobe_cape}" >> ${wfile}
-	fi
-
 	#am335x_boneblack is a custom u-boot to ignore empty factory eeproms...
 	if [ "x${conf_board}" = "xam335x_boneblack" ] ; then
 		board="am335x_evm"
@@ -1418,6 +1443,7 @@ populate_rootfs () {
 
 	echo "/boot/uEnv.txt---------------"
 	cat ${wfile}
+	sudo chown -R 1000:1000 ${wfile}
 	echo "-----------------------------"
 
 	wfile="${TEMPDIR}/disk/boot/SOC.sh"
@@ -1455,7 +1481,7 @@ populate_rootfs () {
 			echo "${boot_drive}  /boot/efi vfat defaults 0 0" >> ${wfile}
 		fi
 
-		echo "debugfs  /sys/kernel/debug  debugfs  defaults  0  0" >> ${wfile}
+		echo "debugfs  /sys/kernel/debug  debugfs  mode=755,uid=root,gid=gpio,defaults  0  0" >> ${wfile}
 
 		if [ "x${DISABLE_ETH}" != "xskip" ] ; then
 			wfile="${TEMPDIR}/disk/etc/network/interfaces"
@@ -1561,7 +1587,11 @@ populate_rootfs () {
 	fi
 
 	if [ -f ${TEMPDIR}/disk/etc/init.d/cpufrequtils ] ; then
-		sed -i 's/GOVERNOR="ondemand"/GOVERNOR="performance"/g' ${TEMPDIR}/disk/etc/init.d/cpufrequtils
+		if [ "x${conf_board}" = "xbeagle_x15" ] ; then
+			sed -i 's/GOVERNOR="ondemand"/GOVERNOR="powersave"/g' ${TEMPDIR}/disk/etc/init.d/cpufrequtils
+		else
+			sed -i 's/GOVERNOR="ondemand"/GOVERNOR="performance"/g' ${TEMPDIR}/disk/etc/init.d/cpufrequtils
+		fi
 	fi
 
 	if [ ! -f ${TEMPDIR}/disk/opt/scripts/boot/generic-startup.sh ] ; then
@@ -1876,7 +1906,10 @@ while [ ! -z "$1" ] ; do
 		### seek=$((1024 * (gsize * 850)))
 		## x 850 (85%) #1GB = 850 #2GB = 1700 #4GB = 3400
 		#
-		dd if=/dev/zero of="${media}" bs=1024 count=0 seek=$((1024 * (gsize * 850)))
+		### seek=$((1024 * (gsize * 900)))
+		## x 900 (90%) #1GB = 900 #2GB = 1800 #4GB = 3600
+		#
+		dd if=/dev/zero of="${media}" bs=1024 count=0 seek=$((1024 * (gsize * 900)))
 		;;
 	--dtb)
 		checkparm $2
@@ -1959,7 +1992,8 @@ while [ ! -z "$1" ] ; do
 		uboot_eeprom="bbbw_blank"
 		;;
 	--bbb-old-bootloader-in-emmc)
-		bbb_old_bootloader_in_emmc="enable"
+		echo "[--bbb-old-bootloader-in-emmc] is obsolete, and has been removed..."
+		exit 2
 		;;
 	--x15-force-revb-flash)
 		x15_force_revb_flash="enable"
@@ -1998,6 +2032,12 @@ while [ ! -z "$1" ] ; do
 	--enable-uboot-cape-overlays)
 		uboot_cape_overlays="enable"
 		;;
+	--enable-uboot-disable-video)
+		uboot_disable_video="enable"
+		;;
+	--enable-uboot-disable-audio)
+		uboot_disable_audio="enable"
+		;;
 	--enable-uboot-pru-rproc-44ti)
 		uboot_pru_rproc_44ti="enable"
 		;;
@@ -2007,6 +2047,16 @@ while [ ! -z "$1" ] ; do
 		;;
 	--enable-uboot-pru-rproc-414ti)
 		uboot_pru_rproc_414ti="enable"
+		;;
+	--enable-uboot-pru-rproc-419ti)
+		uboot_pru_rproc_419ti="enable"
+		;;
+	--enable-mainline-pru-rproc)
+		mainline_pru_rproc="enable"
+		;;
+	--enable-uboot-pru-uio-419)
+		echo "[--enable-uboot-pru-uio-419] is obsolete, and has been removed..."
+		exit 2
 		;;
 	--efi)
 		uboot_efi_mode="enable"
@@ -2019,8 +2069,10 @@ while [ ! -z "$1" ] ; do
 		kernel_override="$2"
 		;;
 	--enable-cape)
-		checkparm $2
-		oobe_cape="$2"
+		#checkparm $2
+		#oobe_cape="$2"
+		echo "[--enable-cape XYZ] is obsolete, and has been removed..."
+		exit 2
 		;;
 	--enable-fat-partition)
 		enable_fat_partition="enable"

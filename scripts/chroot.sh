@@ -1,6 +1,6 @@
 #!/bin/bash -ex
 #
-# Copyright (c) 2012-2018 Robert Nelson <robertcnelson@gmail.com>
+# Copyright (c) 2012-2019 Robert Nelson <robertcnelson@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,8 +26,9 @@ time=$(date +%Y-%m-%d)
 OIB_DIR="$(dirname "$( cd "$(dirname "$0")" ; pwd -P )" )"
 chroot_completed="false"
 
-abi=ab
+abi=ac
 
+#ac=change /sys/kernel/debug mount persmissions
 #ab=efi added 20180321
 #aa
 
@@ -141,6 +142,13 @@ check_defines () {
 		if [ ! "x${repo_rcnee_pkg_list}" = "x" ] ; then
 			include=$(echo ${repo_rcnee_pkg_list} | sed 's/,/ /g' | sed 's/\t/,/g')
 			deb_additional_pkgs="${deb_additional_pkgs} ${include}"
+		fi
+
+		if [ "x${repo_rcnee_sgx}" = "xenable" ] ; then
+			if [ ! "x${repo_rcnee_sgx_pkg_list}" = "x" ] ; then
+				include=$(echo ${repo_rcnee_sgx_pkg_list} | sed 's/,/ /g' | sed 's/\t/,/g')
+				deb_additional_pkgs="${deb_additional_pkgs} ${include}"
+			fi
 		fi
 	fi
 }
@@ -326,12 +334,12 @@ if [ "x${deb_distribution}" = "xdebian" ] ; then
 		echo 'Acquire::GzipIndexes "true"; Acquire::CompressionTypes::Order:: "gz";' > /tmp/02compress-indexes
 		sudo mv /tmp/02compress-indexes "${tempdir}/etc/apt/apt.conf.d/02compress-indexes"
 		;;
-	stretch)
+	stretch|buster)
 		echo 'Acquire::GzipIndexes "true"; APT::Compressor::xz::Cost "40";' > /tmp/02compress-indexes
 		sudo mv /tmp/02compress-indexes "${tempdir}/etc/apt/apt.conf.d/02compress-indexes"
 		;;
-	buster|sid)
-		###FIXME: close to release switch to ^ xz, right now buster is slow on apt...
+	sid)
+		###FIXME: close to release switch to ^ xz, right now <next> is slow on apt...
 		echo 'Acquire::GzipIndexes "true"; APT::Compressor::gzip::Cost "40";' > /tmp/02compress-indexes
 		sudo mv /tmp/02compress-indexes "${tempdir}/etc/apt/apt.conf.d/02compress-indexes"
 		;;
@@ -357,38 +365,47 @@ echo "deb http://${deb_mirror} ${deb_codename} ${deb_components}" > ${wfile}
 echo "#deb-src http://${deb_mirror} ${deb_codename} ${deb_components}" >> ${wfile}
 echo "" >> ${wfile}
 
+#https://wiki.debian.org/StableUpdates
 case "${deb_codename}" in
-buster|sid)
+sid)
 	echo "#deb http://${deb_mirror} ${deb_codename}-updates ${deb_components}" >> ${wfile}
 	echo "##deb-src http://${deb_mirror} ${deb_codename}-updates ${deb_components}" >> ${wfile}
+	echo "" >> ${wfile}
+	;;
+jessie)
+	echo "###For Debian 8 Jessie, jessie-updates no longer exists as this suite no longer receives updates since 2018-05-17." >> ${wfile}
 	;;
 *)
 	echo "deb http://${deb_mirror} ${deb_codename}-updates ${deb_components}" >> ${wfile}
 	echo "#deb-src http://${deb_mirror} ${deb_codename}-updates ${deb_components}" >> ${wfile}
+	echo "" >> ${wfile}
 	;;
 esac
 
+#https://wiki.debian.org/LTS/Using
 case "${deb_codename}" in
-jessie|stretch)
-	echo "" >> ${wfile}
+jessie|stretch|buster)
 	echo "deb http://deb.debian.org/debian-security ${deb_codename}/updates ${deb_components}" >> ${wfile}
 	echo "#deb-src http://deb.debian.org/debian-security ${deb_codename}/updates ${deb_components}" >> ${wfile}
 	echo "" >> ${wfile}
-	if [ "x${chroot_enable_debian_backports}" = "xenable" ] ; then
-		echo "deb http://deb.debian.org/debian ${deb_codename}-backports ${deb_components}" >> ${wfile}
-		echo "#deb-src http://deb.debian.org/debian ${deb_codename}-backports ${deb_components}" >> ${wfile}
-	else
-		echo "#deb http://deb.debian.org/debian ${deb_codename}-backports ${deb_components}" >> ${wfile}
-		echo "##deb-src http://deb.debian.org/debian ${deb_codename}-backports ${deb_components}" >> ${wfile}
-	fi
 	;;
-buster|sid)
-	echo "" >> ${wfile}
+sid)
 	echo "#deb http://deb.debian.org/debian-security ${deb_codename}/updates ${deb_components}" >> ${wfile}
 	echo "##deb-src http://deb.debian.org/debian-security ${deb_codename}/updates ${deb_components}" >> ${wfile}
 	echo "" >> ${wfile}
 	;;
 esac
+
+#https://wiki.debian.org/Backports
+if [ "x${chroot_enable_debian_backports}" = "xenable" ] ; then
+	case "${deb_codename}" in
+	jessie|stretch)
+		echo "deb http://deb.debian.org/debian ${deb_codename}-backports ${deb_components}" >> ${wfile}
+		echo "#deb-src http://deb.debian.org/debian ${deb_codename}-backports ${deb_components}" >> ${wfile}
+		echo "" >> ${wfile}
+		;;
+	esac
+fi
 
 if [ "x${repo_external}" = "xenable" ] ; then
 	echo "" >> ${wfile}
@@ -410,6 +427,13 @@ if [ ! "x${repo_nodesource}" = "x" ] ; then
 	echo "#deb-src https://deb.nodesource.com/${repo_nodesource} ${repo_nodesource_dist} main" >> ${wfile}
 	echo "" >> ${wfile}
 	sudo cp -v "${OIB_DIR}/target/keyring/nodesource.gpg.key" "${tempdir}/tmp/nodesource.gpg.key"
+fi
+
+if [ "x${repo_azulsystems}" = "xenable" ] ; then
+	echo "" >> ${wfile}
+	echo "deb http://repos.azulsystems.com/${deb_distribution} stable main" >> ${wfile}
+	echo "" >> ${wfile}
+	sudo cp -v "${OIB_DIR}/target/keyring/repos.azulsystems.com.pubkey.asc" "${tempdir}/tmp/repos.azulsystems.com.pubkey.asc"
 fi
 
 if [ "x${repo_rcnee}" = "xenable" ] ; then
@@ -570,6 +594,10 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 			apt-key add /tmp/nodesource.gpg.key
 			rm -f /tmp/nodesource.gpg.key || true
 		fi
+		if [ -f /tmp/repos.azulsystems.com.pubkey.asc ] ; then
+			apt-key add /tmp/repos.azulsystems.com.pubkey.asc
+			rm -f /tmp/repos.azulsystems.com.pubkey.asc || true
+		fi
 		if [ "x${repo_rcnee}" = "xenable" ] ; then
 			apt-key add /tmp/repos.rcn-ee.net-archive-keyring.asc
 			rm -f /tmp/repos.rcn-ee.net-archive-keyring.asc || true
@@ -712,6 +740,7 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 			echo "Log: (chroot) Installing modules for: ${repo_rcnee_pkg_version}"
 			apt-get -y install libpruio-modules-${repo_rcnee_pkg_version} || true
 			apt-get -y install rtl8723bu-modules-${repo_rcnee_pkg_version} || true
+			apt-get -y install rtl8821cu-modules-${repo_rcnee_pkg_version} || true
 			apt-get -y install ti-cmem-modules-${repo_rcnee_pkg_version} || true
 			depmod -a ${repo_rcnee_pkg_version}
 			update-initramfs -u -k ${repo_rcnee_pkg_version}
@@ -725,7 +754,7 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 
 		if [ ! "x${rfs_ssh_banner}" = "x" ] || [ ! "x${rfs_ssh_user_pass}" = "x" ] ; then
 			if [ -f /etc/ssh/sshd_config ] ; then
-				sed -i -e 's:#Banner:Banner:g' /etc/ssh/sshd_config
+				sed -i -e 's:#Banner none:Banner /etc/issue.net:g' /etc/ssh/sshd_config
 			fi
 		fi
 	}
@@ -858,6 +887,7 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 		cat /etc/group | grep ^gpio || groupadd -r gpio || true
 		cat /etc/group | grep ^pwm || groupadd -r pwm || true
 		cat /etc/group | grep ^eqep || groupadd -r eqep || true
+		cat /etc/group | grep ^remoteproc || groupadd -r remoteproc || true
 
 		echo "KERNEL==\"hidraw*\", GROUP=\"plugdev\", MODE=\"0660\"" > /etc/udev/rules.d/50-hidraw.rules
 		echo "KERNEL==\"spidev*\", GROUP=\"spi\", MODE=\"0660\"" > /etc/udev/rules.d/50-spi.rules
@@ -868,7 +898,7 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 		echo "SUBSYSTEM==\"cmem\", GROUP=\"tisdk\", MODE=\"0660\"" > /etc/udev/rules.d/tisdk.rules
 		echo "SUBSYSTEM==\"rpmsg_rpc\", GROUP=\"tisdk\", MODE=\"0660\"" >> /etc/udev/rules.d/tisdk.rules
 
-		default_groups="admin,adm,cloud9ide,dialout,gpio,pwm,eqep,i2c,kmem,spi,cdrom,floppy,audio,dip,video,netdev,plugdev,bluetooth,users,systemd-journal,tisdk,weston-launch,xenomai"
+		default_groups="admin,adm,cloud9ide,dialout,gpio,pwm,eqep,i2c,remoteproc,kmem,spi,cdrom,floppy,audio,dip,video,netdev,plugdev,bluetooth,users,systemd-journal,tisdk,weston-launch,xenomai"
 
 		pkg="sudo"
 		dpkg_check
@@ -1021,9 +1051,20 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 			systemctl disable ureadahead.service || true
 		fi
 
-		#No guarntee we will have an active network connection...
+		#No guarantee we will have an active network connection...
+		#debian@beaglebone:~$ sudo systemd-analyze blame | grep apt-daily.service
+		#     9.445s apt-daily.services
 		if [ -f /lib/systemd/system/apt-daily.service ] ; then
 			systemctl disable apt-daily.service || true
+			systemctl disable apt-daily.timer || true
+		fi
+
+		#No guarantee we will have an active network connection...
+		#debian@beaglebone:~$ sudo systemd-analyze blame | grep apt-daily-upgrade.service
+		#     10.300s apt-daily-upgrade.service
+		if [ -f /lib/systemd/system/apt-daily-upgrade.service ] ; then
+			systemctl disable apt-daily-upgrade.service || true
+			systemctl disable apt-daily-upgrade.timer || true
 		fi
 
 		#We use connman...
@@ -1034,6 +1075,23 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 		#We use dnsmasq & connman...
 		if [ -f /lib/systemd/system/systemd-resolved.service ] ; then
 			systemctl disable systemd-resolved.service || true
+		fi
+
+		#Kill man-db
+		#debian@beaglebone:~$ sudo systemd-analyze blame | grep man-db.service
+		#    4min 10.587s man-db.service
+		if [ -f /lib/systemd/system/man-db.service ] ; then
+			systemctl disable man-db.service || true
+			systemctl disable man-db.timer || true
+		fi
+
+		#Anyone who needs this can enable it...
+		if [ -f /lib/systemd/system/pppd-dns.service ] ; then
+			systemctl disable pppd-dns.service || true
+		fi
+
+		if [ -f /lib/systemd/system/hostapd.service ] ; then
+			systemctl disable hostapd.service || true
 		fi
 	}
 
@@ -1114,6 +1172,10 @@ cat > "${DIR}/chroot_script.sh" <<-__EOF__
 		grub_tweaks
 	fi
 
+	if [ -d /opt/sgx/ ] ; then
+		chown -R ${rfs_username}:${rfs_username} /opt/sgx/
+	fi
+
 	rm -f /chroot_script.sh || true
 __EOF__
 
@@ -1154,6 +1216,16 @@ if [ "x${include_firmware}" = "xenable" ] ; then
 	if [ -f "${DIR}/git/linux-firmware/mt7601u.bin" ] ; then
 		sudo cp "${DIR}/git/linux-firmware/mt7601u.bin" "${tempdir}/lib/firmware/mt7601u.bin"
 	fi
+fi
+
+if [ "x${repo_rcnee_sgx}" = "xenable" ] ; then
+	sgx_http="https://rcn-ee.net/repos/debian/pool/main"
+	sudo mkdir -p "${tempdir}/opt/sgx/"
+	sudo wget --directory-prefix="${tempdir}/opt/sgx/" ${sgx_http}/t/ti-sgx-ti33x-ddk-um/ti-sgx-ti33x-ddk-um_1.14.3699939-git20171201.0-0rcnee9~stretch+20190328_armhf.deb
+	sudo wget --directory-prefix="${tempdir}/opt/sgx/" ${sgx_http}/t/ti-sgx-ti335x-modules-${repo_rcnee_pkg_version}/ti-sgx-ti335x-modules-${repo_rcnee_pkg_version}_1${deb_codename}_armhf.deb
+	sudo wget --directory-prefix="${tempdir}/opt/sgx/" ${sgx_http}/t/ti-sgx-jacinto6evm-modules-${repo_rcnee_pkg_version}/ti-sgx-jacinto6evm-modules-${repo_rcnee_pkg_version}_1${deb_codename}_armhf.deb
+	wfile="${tempdir}/opt/sgx/status"
+	sudo sh -c "echo 'not_installed' >> ${wfile}"
 fi
 
 if [ -n "${early_chroot_script}" -a -r "${DIR}/target/chroot/${early_chroot_script}" ] ; then
