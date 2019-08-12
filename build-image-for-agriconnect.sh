@@ -27,7 +27,7 @@ generate_img() {
 	cd deploy/debian-${VERNUM}-console-armhf-${TODAY}
 	FILENAME=BBB-eMMC-flasher-debian-${VERNUM}-${TODAY}
 	echo "Setup image for SD card"
-	sudo ./setup_sdcard.sh --img-4gb ${FILENAME} --dtb beaglebone --bbb-flasher --bbb-old-bootloader-in-emmc --hostname beaglebone
+	sudo ./setup_sdcard.sh --img-4gb ${FILENAME} --dtb beaglebone --bbb-flasher --hostname beaglebone
 	IMGFILE=${FILENAME}-4gb.img
 	# Move to deploy/ folder
 	mv ${IMGFILE} ../
